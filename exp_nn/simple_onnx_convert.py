@@ -37,8 +37,6 @@ ap.add_argument('-p', '--print', dest='print', default=False, action='store_true
                 help="perform cat verification (mobilenet like)")
 ap.add_argument('-d', '--debug', dest='debug', default=False, action='store_true',
                 help="debug")
-ap.add_argument('-d', '--debug', dest='debug', default=False, action='store_true',
-                help="debug")
 
 args = ap.parse_args()
 
@@ -137,7 +135,9 @@ def mod_partitioning(mod):
                 transform.FoldScaleAxis(),
                 transform.MergeComposite(get_pattern_table(target_name)),
                 transform.AnnotateTarget(target_name),
-                transform.MergeCompilerRegions(),
+                #   Because of develop purposes would like to keep BNNS kernels separate
+                #   to collect performance statistic per kernel.
+                # transform.MergeCompilerRegions(),
                 transform.PartitionGraph(),
             ]
         )
