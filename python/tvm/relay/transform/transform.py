@@ -463,7 +463,7 @@ def ConvertLayout(desired_layouts):
 def Legalize(legalize_map_attr_name="FTVMLegalize"):
     """Legalizes an expression with another expression.
     This pass can be used to replace an expr with another expr for target
-    dependent optimizations. For example, one expr, though semnatically
+    dependent optimizations. For example, one expr, though semantically
     equivalent to the other, can have better performance on a target. This pass
     can be used to legalize the expr in a target-dependent manner.
 
