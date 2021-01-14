@@ -213,6 +213,20 @@ namespace BNNS {
       ICHECK_EQ(res, 0) << "BNNS runtime. Primitive was not executed properly";
     }
 
+    void execute(const Tensor &src1, const Tensor &src2, Tensor &dst1) {
+      auto mb = src1.get_mb();
+      ICHECK_EQ(mb, dst1.get_mb());
+
+      // NB! Do not use simple BNNSFilterApply. There is a bug inside BNNS,
+      //     and BNNSFilterApply doesn't work for grouped convolution.
+      auto res = BNNSFilterApplyTwoInputBatch(bnns_filter, mb,
+          src1.get_data_hdl(), src1.get_mb_stride(),
+          src2.get_data_hdl(), src2.get_mb_stride(),
+          dst1.get_data_hdl(), dst1.get_mb_stride());
+
+      ICHECK_EQ(res, 0) << "BNNS runtime. Primitive was not executed properly";
+    }
+
    private:
     BNNSFilter bnns_filter = nullptr;
   };
@@ -253,9 +267,18 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
 
     // Invoke primitives in topological order
     for (int i = 0; i < primitives_.size(); ++i) {
-      auto src = entry_out_mem_.at(prim_args_.at(i).first);
-      auto dst = entry_out_mem_.at(prim_args_.at(i).second);
-      primitives_.at(i)->execute(*src, *dst);
+      ICHECK_GE(prim_args_[i].size(), 2);
+      ICHECK_LE(prim_args_[i].size(), 3);
+      if (prim_args_[i].size() == 2) {
+        auto src = entry_out_mem_.at(prim_args_[0][0]);
+        auto dst = entry_out_mem_.at(prim_args_[0][1]);
+        primitives_.at(i)->execute(*src, *dst);
+      } else {
+        auto src1 = entry_out_mem_.at(prim_args_[0][0]);
+        auto src2 = entry_out_mem_.at(prim_args_[0][1]);
+        auto dst = entry_out_mem_.at(prim_args_[0][2]);
+        primitives_.at(i)->execute(*src1, *src2, *dst);
+      }
     }
   }
 
@@ -282,6 +305,8 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
           Dense(nid, true);
         } else if ("bnns.dense_bias_gelu" == op_name) {
           Dense(nid, true, true);
+        } else if ("nn.batch_matmul" == op_name) {
+          MatMul(nid);
 //        } else if ("nn.batch_norm" == op_name) {
 //          BatchNorm(nid);
 //        } else if ("nn.relu" == op_name) {
@@ -489,6 +514,61 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
     prim_args_.push_back({EntryID(src_entry), EntryID(dst_entry)});
   }
 
+  void MatMul(const size_t& nid) {
+    auto node = nodes_[nid];
+
+    // Setup attributes.
+    auto a_entry = node.GetInputs()[0];
+    auto b_entry = node.GetInputs()[1];
+    auto dst_entry = JSONGraphNodeEntry(nid, 0);
+    bool a_is_weighted = data_entry_[EntryID(a_entry)] != nullptr;
+    bool b_is_weighted = data_entry_[EntryID(b_entry)] != nullptr;
+
+    void* a_data = nullptr;
+    void* b_data = nullptr;
+    if (a_is_weighted)
+        a_data = data_entry_[EntryID(a_entry)]->data;
+    if (b_is_weighted)
+        b_data = data_entry_[EntryID(b_entry)]->data;
+    // Memory descriptions.
+    auto a_md = BindBNNSTensor(a_entry, a_data);
+    auto b_md = BindBNNSTensor(b_entry, b_data);
+    auto dst_md = BindBNNSTensor(dst_entry);
+
+    BNNSNDArrayDescriptor a_desc = a_md->get_nd_desc();
+    BNNSNDArrayDescriptor b_desc = b_md->get_nd_desc();
+    BNNSNDArrayDescriptor out_desc = dst_md->get_nd_desc();
+    a_desc.layout = BNNSDataLayoutRowMajorMatrix;
+    b_desc.layout = BNNSDataLayoutRowMajorMatrix;
+    out_desc.layout = BNNSDataLayoutRowMajorMatrix;
+    a_desc.data = a_data;
+    b_desc.data = b_data;
+
+    BNNSLayerParametersBroadcastMatMul layerParameters = {
+        1, // alpha
+        0, // beta
+        false, // transA
+        true,  // transB
+        false, // quadratic
+        a_is_weighted,
+        b_is_weighted,
+        a_desc,
+        b_desc,
+        out_desc
+    };
+
+    auto filter = BNNSFilterCreateLayerBroadcastMatMul(&layerParameters, &common_filter_param);
+    ICHECK(filter) << "BNNS primitive was not created. Unsupported attributes configuration";
+    primitives_.emplace_back(std::make_shared<BNNS::Primitive>(filter));
+    std::vector<uint32_t> args;
+    if (!a_is_weighted)
+        args.push_back(EntryID(a_entry));
+    if (!b_is_weighted)
+        args.push_back(EntryID(b_entry));
+    args.push_back(EntryID(dst_entry));
+    prim_args_.push_back(std::move(args));
+  }
+
   // Read from BNNS memory and write to the handle.
   inline void read_from_dnnl_memory(void* handle, size_t size, BNNS::Tensor& tensor) {
     uint8_t* src = static_cast<uint8_t*>(tensor.get_data_hdl());
@@ -524,7 +604,7 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
   BNNSFilterParameters common_filter_param;
 
   std::vector<std::shared_ptr<BNNS::Primitive>> primitives_;
-  std::vector<std::pair<uint32_t, uint32_t>> prim_args_;
+  std::vector<std::vector<uint32_t>> prim_args_;
 
   /* The entry ID to its corresponding output memory. */
   std::unordered_map<uint32_t, std::shared_ptr<BNNS::Tensor>> entry_out_mem_;

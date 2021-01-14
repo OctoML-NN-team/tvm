@@ -108,6 +108,7 @@ def _register_external_op_helper(op_name, supported=True):
 
     return _func_wrapper
 
+_register_external_op_helper("nn.batch_matmul")
 
 # TODO [apeskov]: enlarge list of supported types
 #   plus clarify meaning of "" value
