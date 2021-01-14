@@ -17,13 +17,14 @@
  * under the License.
  */
 
-/*!
+/**
  * \file
- * \brief A simple JSON runtime for BNNS.
+ * \brief Simple JSON runtime for Apple BNNS primitives
  */
 
 #include <tvm/runtime/ndarray.h>
 #include <tvm/runtime/registry.h>
+#include <tvm/runtime/c_backend_api.h>
 
 #include <cstddef>
 #include <string>
@@ -35,7 +36,8 @@
 
 #include "Accelerate/Accelerate.h"
 
-#define USE_OLD_BNNS_API 0
+#define BNNS_TMP_CONCURRENCY 2
+#define BNNS_MAX_CONCURRENCY 8
 
 template<typename T1, typename T2>
 bool one_of(T1 arg1, T2 arg2) {
@@ -61,7 +63,10 @@ namespace BNNS {
   using Dtype = BNNSDataType;
 
   void* default_alloc(size_t size) {
-    // TODO: make it aligned with cash line
+    // TODO: Clarify, should it have some alignment for better performance
+    //       with SIMD execution.. may be TVMBackendAllocWorkspace is more
+    //       preferable here.
+    //       Note: Apple uses posix_memalign by default.
     return malloc(size);
   }
 
@@ -71,55 +76,32 @@ namespace BNNS {
 
   class Tensor {
    public:
-    Tensor(Shape shape, Dtype dtype, void* hdl):real_shape(shape) {
+    Tensor(Shape shape, Dtype dtype, void* hdl)
+        : real_shape(shape), data_type(dtype) {
+      ICHECK(shape.size() < BNNS_MAX_TENSOR_DIMENSION);
+
       if (hdl) {
         data_handler = hdl;
         is_external_data = true;
       } else {
-        const size_t elem_size = (dtype & 0xFFFF) / 4;
-        const size_t elem_count = std::accumulate(real_shape.begin(), real_shape.end(),
-            1, std::multiplies<int>());
-
-        data_handler = default_alloc(elem_count * elem_size);
+        const size_t buff_size = getNumOfElements(shape) * getElementSize(dtype);
+        data_handler = default_alloc(buff_size);
         is_external_data = false;
       }
 
-#if USE_OLD_BNNS_API
-      ICHECK(one_of(shape.size(), 3, 4));
-      const auto dim_shift = (shape.size() == 4) ? 1 : 0;
-      const size_t N = dim_shift ? shape[0] : 1;
-      const size_t C = shape[dim_shift + 0];
-      const size_t H = shape[dim_shift + 1];
-      const size_t W = shape[dim_shift + 2];
-      bnns_desc = {
-          W,     /* width */
-          H,     /* height */
-          C,     /* channels */
-          W,     /* row_stride */
-          H*W,   /* image_stride */
-          dtype, /* data_type */
-          1.,    /* data_scale */
-          0.     /* data_bias */
-      };
-#else
-      ICHECK(shape.size() < BNNS_MAX_TENSOR_DIMENSION);
-
-      BNNSNDArrayFlags default_nd_array_flag = BNNSNDArrayFlagBackpropSet;
       bnns_nd_desc = {
-        default_nd_array_flag,
-        BNNSDataLayout4DLastMajor,       // TODO [apeskov]: should support all ND layouts
+        BNNSNDArrayFlags(0),
+        getPlainLayout(shape),
         {},      // shape
-        {},      // strides
+        {},      // strides, empty value means use default dense strides
         hdl,     // data handler
         dtype,   // data type
-        nullptr, // table_data (clustering case)
-        BNNSDataTypeFloat32, // assume this field has no affect in case of nullptr in table_data
+        nullptr, // table_data (clustering case), is not used
+        dtype,
         1.f,
         0.f
       };
-
       std::copy(shape.rbegin(), shape.rend(), std::begin(bnns_nd_desc.size));
-#endif
     }
 
     ~Tensor() {
@@ -129,11 +111,10 @@ namespace BNNS {
       }
     }
 
-    Dtype get_data_type() const { return bnns_desc.data_type; }
-    size_t get_elem_size() const { return bnns_desc.data_type & 0xffff; }
-
     void* get_data_hdl() { return data_handler; }
+
     const void* get_data_hdl() const { return data_handler; };
+
     void set_data_hdl(void *hdl) {
       if (data_handler && !is_external_data) {
         default_free(data_handler);
@@ -150,10 +131,8 @@ namespace BNNS {
 
     size_t get_mb_stride() const {
       return std::accumulate(real_shape.begin() + 1, real_shape.end(),
-          1, std::multiplies<int>());
+                             1, std::multiplies<int>());
     }
-
-    const BNNSImageStackDescriptor& get_desc() const { return bnns_desc; };
 
     const BNNSNDArrayDescriptor get_nd_desc(size_t nd = 0) const {
       auto original_nd = real_shape.size();
@@ -172,65 +151,179 @@ namespace BNNS {
       return bnns_nd_desc;
     };
 
-    BNNSLayerData get_bnns_layer_data() const {
-      return {
-          data_handler,         /* data */
-          bnns_desc.data_type,  /* data_type */
-          bnns_desc.data_scale, /* data_scale */
-          bnns_desc.data_bias,  /* data_bias */
-          nullptr               /* data_table */
-      };
+   private:
+    static BNNSDataLayout getPlainLayout(const Shape &shape) {
+      return getPlainLayout(shape.size());
+    }
+
+    static BNNSDataLayout getPlainLayout(size_t rank) {
+      switch (rank) {
+        case 1: return BNNSDataLayout1DFirstMajor;
+        case 2: return BNNSDataLayout2DFirstMajor;
+        case 3: return BNNSDataLayout3DFirstMajor;
+        case 4: return BNNSDataLayout4DFirstMajor;
+        case 5: return BNNSDataLayout5DFirstMajor;
+        case 6: return BNNSDataLayout6DFirstMajor;
+        case 7: return BNNSDataLayout7DFirstMajor;
+        case 8: return BNNSDataLayout8DFirstMajor;
+        default:
+          LOG(FATAL) << "Unsupported tensor rank : " << rank
+                     << " Supported cases is only 1-8 ";
+          return static_cast<BNNSDataLayout>(0);
+      }
+    }
+
+    /**
+     * return size in byte of element of provided type
+     * @param dtype
+     * @return size of element in bytes
+     */
+    static size_t getElementSize(Dtype dtype) {
+      return (dtype & 0xFFFF) / sizeof(uint8_t);
+    }
+
+    static size_t getNumOfElements(const Shape &shape) {
+      return std::accumulate(shape.begin(), shape.end(),
+                             1, std::multiplies<int>());
     }
 
    private:
-    Shape real_shape;
-    void* data_handler;
-    bool is_external_data = false;
-    BNNSImageStackDescriptor bnns_desc;
+    Shape  real_shape = {};
+    Dtype  data_type = Dtype(0);
+    size_t data_offset = 0;
+    void*  data_handler = nullptr;
+    bool   is_external_data = false;
+
     BNNSNDArrayDescriptor bnns_nd_desc;
   };
 
   class Primitive {
    public:
-    Primitive(BNNSFilter f) : bnns_filter(f) {}
-    ~Primitive() {
-      if (bnns_filter) {
-        BNNSFilterDestroy(bnns_filter);
-        bnns_filter = nullptr;
+    Primitive(BNNSFilter f) : num_filters(1), filters{f} {}
+
+    Primitive(BNNSFilter fs[BNNS_MAX_CONCURRENCY]) {
+      std::copy(fs, fs + BNNS_MAX_CONCURRENCY, filters);
+      for (int i = 0; i < BNNS_MAX_CONCURRENCY; i++) {
+        if (filters[i] == nullptr) {
+          num_filters = i;
+          break;
+        }
       }
     }
 
-    void execute(const Tensor &src1, Tensor &dst1) {
-      auto mb = src1.get_mb();
-      ICHECK_EQ(mb, dst1.get_mb());
+    ~Primitive() {
+      for (size_t i = 0; i < num_filters; i++) {
+        auto &filter = filters[i];
+        if (filter) {
+          BNNSFilterDestroy(filter);
+          filter = nullptr;
+        }
+      }
+    }
 
-      // NB! Do not use simple BNNSFilterApply. There is a bug inside BNNS,
-      //     and BNNSFilterApply doesn't work for grouped convolution.
-      auto res = BNNSFilterApplyBatch(bnns_filter, mb,
-          src1.get_data_hdl(), src1.get_mb_stride(),
-          dst1.get_data_hdl(), dst1.get_mb_stride());
+    void execute(std::vector<Tensor*> srcs, Tensor &dst) {
+      ICHECK_LE(srcs.size(), 2) << "Currently BNNS runtime supports primitives with only 1 or 2 "
+                                   "data inputs.";
 
+      run_ctx ctx { this, srcs[0], nullptr, &dst };
+      if (srcs.size() > 1)
+        ctx.src2 = srcs[1];
+
+      auto res = TVMBackendParallelLaunch(run_task, &ctx, num_filters);
       ICHECK_EQ(res, 0) << "BNNS runtime. Primitive was not executed properly";
     }
 
-    void execute(const Tensor &src1, const Tensor &src2, Tensor &dst1) {
-      auto mb = src1.get_mb();
-      ICHECK_EQ(mb, dst1.get_mb());
+    void set_input_stride(size_t stride1, size_t stride2 = 0) {
+      in1_hdl_stride = stride1;
+      in2_hdl_stride = stride2;
+    }
+    void set_output_stride(size_t stride) { out_hdl_stride = stride; }
 
-      // NB! Do not use simple BNNSFilterApply. There is a bug inside BNNS,
+   private:
+    struct run_ctx {
+      Primitive *prim;
+      const Tensor *src1;
+      const Tensor *src2;
+      Tensor *dst;
+    };
+
+    static int run_task(int task_id, TVMParallelGroupEnv* penv, void* cdata) {
+      auto ctx = reinterpret_cast<run_ctx*>(cdata);
+      const auto *prim = ctx->prim;
+
+      const auto &filter  = prim->filters[task_id];
+
+      auto src1_hdl = ctx->src1->get_data_hdl();
+      auto dst_hdl  = ctx->dst->get_data_hdl();
+
+      auto src1_mb = ctx->src1->get_mb();
+      auto dst_mb = ctx->dst->get_mb();
+
+      auto src1_mb_stride = ctx->src1->get_mb_stride();
+      auto dst_mb_stride = ctx->dst->get_mb_stride();
+
+      src1_hdl = static_cast<const uint8_t*>(src1_hdl) + task_id*prim->in1_hdl_stride;
+      dst_hdl = static_cast<uint8_t*>(dst_hdl) + task_id*prim->out_hdl_stride;
+
+      ICHECK(src1_mb == dst_mb) << "Mismatch of batch dimension of input/output tensors";
+
+      const void* src2_hdl = nullptr;
+      size_t src2_mb = 0;
+      size_t src2_mb_stride = 0;
+
+      if (ctx->src2) {
+        src2_hdl  = ctx->src2->get_data_hdl();
+        src2_mb = ctx->src2->get_mb();
+        src2_mb_stride = ctx->src2->get_mb_stride();
+        src2_hdl = static_cast<const uint8_t*>(src2_hdl) + task_id*prim->in2_hdl_stride;
+        ICHECK(src2_mb == dst_mb) << "Mismatch of batch dimension of input/output tensors";
+      }
+
+      const auto mb = dst_mb;
+
+      // NB! Limitations
+      //   * Do not use simple BNNSFilterApply. There is a bug inside BNNS,
       //     and BNNSFilterApply doesn't work for grouped convolution.
-      auto res = BNNSFilterApplyTwoInputBatch(bnns_filter, mb,
-          src1.get_data_hdl(), src1.get_mb_stride(),
-          src2.get_data_hdl(), src2.get_mb_stride(),
-          dst1.get_data_hdl(), dst1.get_mb_stride());
+      //   * Group convolution doesn't support arbitrary stride for Batch dim.
+      //     The tensor should be dense.
+      auto sts = (ctx->src2)
+          ? BNNSFilterApplyTwoInputBatch(filter, mb,
+                src1_hdl, src1_mb_stride,
+                src2_hdl, src2_mb_stride,
+                dst_hdl, dst_mb_stride)
+          : BNNSFilterApplyBatch(filter, mb,
+                src1_hdl, src1_mb_stride,
+                dst_hdl, dst_mb_stride);
 
-      ICHECK_EQ(res, 0) << "BNNS runtime. Primitive was not executed properly";
+      return sts;
     }
 
    private:
-    BNNSFilter bnns_filter = nullptr;
+    size_t num_filters = 0;
+    BNNSFilter filters[BNNS_MAX_CONCURRENCY] = {};
+
+    // TODO: temporal solution with strides
+    size_t in1_hdl_stride = 0;
+    size_t in2_hdl_stride = 0;
+    size_t out_hdl_stride = 0;
   };
 }
+
+struct BNNSConfig {
+  /**
+   * Internal parallelism level ov BNNS primitive specified via parameter.
+   * Has no real control from TVM level, so in fact it may be ignored by
+   * implementation.
+   */
+  int internalConcurrency = 0;
+
+  /**
+   * TVM level parallelism for BNNS primitive. In case if BNNS doesn't support
+   * internal parallelism we can add it by splitting primitive into independent
+   * parts and run it in parallel. May provide additional performance.
+   */
+  int externalConcurrency = 0;
+};
 
 class BNNSJSONRuntime : public JSONRuntimeBase {
 
@@ -267,18 +360,12 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
 
     // Invoke primitives in topological order
     for (int i = 0; i < primitives_.size(); ++i) {
-      ICHECK_GE(prim_args_[i].size(), 2);
-      ICHECK_LE(prim_args_[i].size(), 3);
-      if (prim_args_[i].size() == 2) {
-        auto src = entry_out_mem_.at(prim_args_[0][0]);
-        auto dst = entry_out_mem_.at(prim_args_[0][1]);
-        primitives_.at(i)->execute(*src, *dst);
-      } else {
-        auto src1 = entry_out_mem_.at(prim_args_[0][0]);
-        auto src2 = entry_out_mem_.at(prim_args_[0][1]);
-        auto dst = entry_out_mem_.at(prim_args_[0][2]);
-        primitives_.at(i)->execute(*src1, *src2, *dst);
-      }
+      auto res = entry_out_mem_.at(prim_results_[i]);
+      std::vector<BNNS::Tensor*> args;
+      for (auto arg_id : prim_args_[i])
+        args.push_back(entry_out_mem_.at(arg_id).get());
+
+      primitives_.at(i)->execute(args, *res);
     }
   }
 
@@ -307,12 +394,6 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
           Dense(nid, true, true);
         } else if ("nn.batch_matmul" == op_name) {
           MatMul(nid);
-//        } else if ("nn.batch_norm" == op_name) {
-//          BatchNorm(nid);
-//        } else if ("nn.relu" == op_name) {
-//          Relu(nid);
-//        } else if ("add" == op_name) {
-//          Add(nid);
         } else {
           LOG(FATAL) << "Unsupported op: " << op_name;
         }
@@ -334,6 +415,114 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
     }
     return entry_out_mem_[eid];
   }
+
+  /**
+   * Function which split primitive into sub primitives to parallel execution
+   *
+   * @param orig_conv_param descriptor of original convolution
+   * @param batch batch value
+   * @param num number of part to split into.
+   * @return collection of Convolution descriptors plus strides for input and output tensors
+   */
+  static std::tuple<std::vector<BNNSLayerParametersConvolution>, size_t, size_t>
+      split_into_n(const BNNSLayerParametersConvolution& orig_conv_param, size_t batch, size_t num) {
+    size_t i_shape[BNNS_MAX_TENSOR_DIMENSION] = {};
+    size_t o_shape[BNNS_MAX_TENSOR_DIMENSION] = {};
+    size_t w_shape[BNNS_MAX_TENSOR_DIMENSION] = {};
+    size_t b_shape[BNNS_MAX_TENSOR_DIMENSION] = {};
+    size_t w_stride = 0;
+    size_t b_stride = 0;
+    size_t i_stride = 0;
+    size_t o_stride = 0;
+
+    // TODO: In case of batch we can split through bach dimension.
+    //       Meanwhile we just disable it...
+    if (batch > 1) {
+      return {{orig_conv_param}, 0, 0};
+    }
+
+    auto groups = orig_conv_param.groups;
+    // if groups > 1 split only by groups
+    // otherwise split inside one convolution by output channels
+    if (groups > 1) {
+      // fallback into sequential execution
+      if (groups % num != 0)
+        return {{orig_conv_param}, 0, 0};
+
+      std::copy(orig_conv_param.i_desc.size, orig_conv_param.i_desc.size + 3, i_shape);
+      std::copy(orig_conv_param.o_desc.size, orig_conv_param.o_desc.size + 3, o_shape);
+      std::copy(orig_conv_param.w_desc.size, orig_conv_param.w_desc.size + 4, w_shape);
+      std::copy(orig_conv_param.bias.size, orig_conv_param.bias.size + 1, b_shape);
+
+      auto orig_w_buff_size = std::accumulate(w_shape, w_shape + 4, 1, std::multiplies<int>())
+                              * sizeof(float);
+
+      auto orig_b_buff_size = std::accumulate(b_shape, b_shape + 1, 1, std::multiplies<int>())
+                              * sizeof(float);
+
+      auto orig_i_buff_size = std::accumulate(i_shape, i_shape + 3, 1, std::multiplies<int>())
+                              * sizeof(float);
+
+      auto orig_o_buff_size = std::accumulate(o_shape, o_shape + 3, 1, std::multiplies<int>())
+                              * sizeof(float);
+
+      i_shape[2] /= num;
+      o_shape[2] /= num;
+      w_shape[3] /= num;
+      b_shape[0] /= num;
+
+      w_stride = orig_w_buff_size / num;
+      b_stride = orig_b_buff_size / num;
+      i_stride = orig_i_buff_size / num;
+      o_stride = orig_o_buff_size / num;
+      groups = groups / num;
+    } else {
+      std::copy(orig_conv_param.i_desc.size, orig_conv_param.i_desc.size + 3, i_shape);
+      std::copy(orig_conv_param.o_desc.size, orig_conv_param.o_desc.size + 3, o_shape);
+      std::copy(orig_conv_param.w_desc.size, orig_conv_param.w_desc.size + 4, w_shape);
+      std::copy(orig_conv_param.bias.size, orig_conv_param.bias.size + 1, b_shape);
+
+      auto orig_w_buff_size = std::accumulate(w_shape, w_shape + 4, 1, std::multiplies<int>())
+                              * sizeof(float);
+
+      auto orig_b_buff_size = std::accumulate(b_shape, b_shape + 1, 1, std::multiplies<int>())
+                              * sizeof(float);
+
+//      auto orig_i_buff_size = std::accumulate(i_shape, i_shape + 3, 1, std::multiplies<int>())
+//                              * sizeof(float);
+
+      auto orig_o_buff_size = std::accumulate(o_shape, o_shape + 3, 1, std::multiplies<int>())
+                              * sizeof(float);
+
+      o_shape[2] /= num;
+      w_shape[3] /= num;
+      b_shape[0] /= num;
+
+      w_stride = orig_w_buff_size / num;
+      b_stride = orig_b_buff_size / num;
+      i_stride = 0;
+      o_stride = orig_o_buff_size / num;
+    }
+
+    std::vector<BNNSLayerParametersConvolution> res(num);
+    for (size_t i=0; i < num; i++) {
+      auto &cur = res[i];
+      cur = orig_conv_param;
+
+      std::copy(i_shape, i_shape + 3, cur.i_desc.size);
+      std::copy(o_shape, o_shape + 3, cur.o_desc.size);
+      std::copy(w_shape, w_shape + 4, cur.w_desc.size);
+      std::copy(b_shape, b_shape + 1, cur.bias.size);
+
+      cur.w_desc.data = static_cast<uint8_t*>(cur.w_desc.data) + w_stride * i;
+      if (cur.bias.data)
+        cur.bias.data = static_cast<uint8_t*>(cur.bias.data) + b_stride * i;
+
+      cur.groups = groups;
+    }
+    return {res, i_stride, o_stride};
+  }
+
 
   void Conv2d(const size_t& nid, const bool has_relu = false, const bool has_bias = false) {
     auto node = nodes_[nid];
@@ -373,9 +562,6 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
     // Memory shapes.
     BNNS::Shape src_dims = {N, IC, IH, IW};
     BNNS::Shape weights_dims = {OC, IC, KH, KW};
-    if (groups > 1) {   // TODO [apeskov]: Group param is not supported for ios < 14
-      weights_dims = {groups, 1, IC / groups, KH, KW};
-    }
     BNNS::Shape bias_dims = {OC};
     BNNS::Shape dst_dims = {N, OC, OH, OW};
     BNNS::Shape strides_dims = {SH, SW};
@@ -413,25 +599,6 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
         BNNSActivationFunctionRectifiedLinear :
         BNNSActivationFunctionIdentity };
 
-#if USE_OLD_BNNS_API
-    BNNSConvolutionLayerParameters conv_param = {
-        SW ,  /* x_stride */
-        SH ,  /* y_stride */
-        PW_L, /* x_padding */
-        PH_L, /* y_padding */
-        KW,   /* k_width */
-        KH,   /* k_height */
-        IC,   /* in_channels */
-        OC,   /* out_channels */
-        weights_md->get_bnns_layer_data(), /* weights */
-        bias_md->get_bnns_layer_data(),    /* bias */
-        activation, /* activation */
-    };
-
-    auto filter = BNNSFilterCreateConvolutionLayer(&src_md->get_desc(), &dst_md->get_desc(),
-              &conv_param, &common_filter_param);
-#else
-
     auto src_candidate = src_md->get_nd_desc(3);
     auto weights_candidate = weights_md->get_nd_desc();
     auto dst_candidate = dst_md->get_nd_desc(3);
@@ -461,18 +628,28 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
         SH, /* y_stride */
         DW, /* x_dilation_stride */
         DH, /* y_dilation_stride */
-        0,  /* x_padding */
-        0,  /* y_padding */
+        0,  /* x_padding, explicit pads will be used */
+        0,  /* y_padding, explicit pads will be used */
         groups, /* groups */
-        {PW_L, PW_R, PH_L, PH_R} /* explicit pads */
+        {PW_L, PW_R, PH_L, PH_R} /* explicit pad values */
     };
 
-    auto filter = BNNSFilterCreateLayerConvolution(&conv_param, &common_filter_param);
-#endif
+    BNNSFilter filters[BNNS_MAX_CONCURRENCY] = {};
 
-    ICHECK(filter) << "BNNS primitive was not created. Unsupported attributes configuration";
-    primitives_.emplace_back(std::make_shared<BNNS::Primitive>(filter));
-    prim_args_.push_back({EntryID(src_entry), EntryID(dst_entry)});
+    std::vector<BNNSLayerParametersConvolution> params;
+    size_t i_stride, o_stride;
+    std::tie(params, i_stride, o_stride) = split_into_n(conv_param, N, BNNS_TMP_CONCURRENCY);
+    for (int i = 0; i < params.size(); i++) {
+      filters[i] = BNNSFilterCreateLayerConvolution(&params[i], &common_filter_param);
+      ICHECK(filters[i]) << "BNNS primitive was not created. Unsupported attributes configuration";
+    }
+
+    primitives_.emplace_back(std::make_shared<BNNS::Primitive>(filters));
+    primitives_.back()->set_input_stride(i_stride);
+    primitives_.back()->set_output_stride(o_stride);
+
+    prim_args_.push_back({EntryID(src_entry)});
+    prim_results_.push_back({EntryID(dst_entry)});
   }
 
   void Dense(const size_t& nid, const bool has_bias = false, const bool has_gelu = false) {
@@ -523,7 +700,8 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
     auto filter = BNNSFilterCreateLayerFullyConnected(&layerParameters, &common_filter_param);
     ICHECK(filter) << "BNNS primitive was not created. Unsupported attributes configuration";
     primitives_.emplace_back(std::make_shared<BNNS::Primitive>(filter));
-    prim_args_.push_back({EntryID(src_entry), EntryID(dst_entry)});
+    prim_args_.push_back({EntryID(src_entry)});
+    prim_results_.push_back({EntryID(dst_entry)});
   }
 
   void MatMul(const size_t& nid) {
@@ -577,21 +755,8 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
         args.push_back(EntryID(a_entry));
     if (!b_is_weighted)
         args.push_back(EntryID(b_entry));
-    args.push_back(EntryID(dst_entry));
     prim_args_.push_back(std::move(args));
-  }
-
-  // Read from BNNS memory and write to the handle.
-  inline void read_from_dnnl_memory(void* handle, size_t size, BNNS::Tensor& tensor) {
-    uint8_t* src = static_cast<uint8_t*>(tensor.get_data_hdl());
-    std::copy(src, src + size, static_cast<uint8_t*>(handle));
-  }
-
-  // Read from the handle and write to BNNS tensor.
-  inline void write_to_bnns_memory(void* handle, size_t size, BNNS::Tensor& tensor) {
-    uint8_t* dst = static_cast<uint8_t*>(tensor.get_data_hdl());
-    std::copy(reinterpret_cast<uint8_t*>(handle), reinterpret_cast<uint8_t*>(handle) + size,
-              dst);
+    prim_results_.push_back(EntryID(dst_entry));
   }
 
   BNNS::Dtype convertToBNNS(const DLDataType &dl_dtype) {
@@ -613,10 +778,13 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
     return BNNS::Dtype(0);
   }
 
-  BNNSFilterParameters common_filter_param;
+  // TODO(apeskov): Allow to specify num of threads and keep customer buffers.
+  //                Should investigate this attributes.
+  BNNSFilterParameters common_filter_param {};
 
   std::vector<std::shared_ptr<BNNS::Primitive>> primitives_;
   std::vector<std::vector<uint32_t>> prim_args_;
+  std::vector<uint32_t> prim_results_;
 
   /* The entry ID to its corresponding output memory. */
   std::unordered_map<uint32_t, std::shared_ptr<BNNS::Tensor>> entry_out_mem_;
@@ -628,10 +796,11 @@ runtime::Module BNNSJSONRuntimeCreate(String symbol_name, String graph_json,
   return runtime::Module(n);
 }
 
-TVM_REGISTER_GLOBAL("runtime.BNNSJSONRuntimeCreate").set_body_typed(BNNSJSONRuntimeCreate);
+TVM_REGISTER_GLOBAL("runtime.BNNSJSONRuntimeCreate")
+    .set_body_typed(BNNSJSONRuntimeCreate);
 
 TVM_REGISTER_GLOBAL("runtime.module.loadbinary_bnns_json")
-    .set_body_typed(JSONRuntimeBase::LoadFromBinary<BNNSJSONRuntime>);
+    .set_body_typed(BNNSJSONRuntime::LoadFromBinary<BNNSJSONRuntime>);
 
 }  // namespace contrib
 }  // namespace runtime
