@@ -210,7 +210,7 @@ class DFPattern(Node):
 
 def is_var(name: str = "") -> "DFPattern":
     """
-    Syntatic sugar for creating an optionally named VarPattern.
+    Syntactic sugar for creating an optionally named VarPattern.
 
     Parameters
     ----------
@@ -227,7 +227,7 @@ def is_var(name: str = "") -> "DFPattern":
 
 def is_constant() -> "DFPattern":
     """
-    Syntatic sugar for creating a ConstantPattern.
+    Syntactic sugar for creating a ConstantPattern.
 
     Parameters
     ----------
@@ -244,7 +244,7 @@ def is_constant() -> "DFPattern":
 
 def is_expr(expr: Expr) -> "DFPattern":
     """
-    Syntatic sugar for creating an ExprPattern.
+    Syntactic sugar for creating an ExprPattern.
 
     Parameters
     ----------
@@ -261,7 +261,7 @@ def is_expr(expr: Expr) -> "DFPattern":
 
 def is_op(op_name: str) -> "DFPattern":
     """
-    Syntatic sugar for creating an operator ExprPattern.
+    Syntactic sugar for creating an operator ExprPattern.
 
     Parameters
     ----------
@@ -279,7 +279,7 @@ def is_op(op_name: str) -> "DFPattern":
 
 def is_tuple(fields: tvm.ir.container.Array) -> "DFPattern":
     """
-    Syntatic sugar for creating an ExprPattern.
+    Syntactic sugar for creating an ExprPattern.
 
     Parameters
     ----------
@@ -296,7 +296,7 @@ def is_tuple(fields: tvm.ir.container.Array) -> "DFPattern":
 
 def is_tuple_get_item(tuple_value: "DFPattern", index: Optional[int] = None) -> "DFPattern":
     """
-    Syntatic sugar for creating an ExprPattern.
+    Syntactic sugar for creating an ExprPattern.
 
     Parameters
     ----------
@@ -316,7 +316,7 @@ def is_tuple_get_item(tuple_value: "DFPattern", index: Optional[int] = None) -> 
 
 def wildcard() -> "DFPattern":
     """
-    Syntatic sugar for creating a WildcardPattern.
+    Syntactic sugar for creating a WildcardPattern.
 
     Returns
     -------
@@ -328,7 +328,7 @@ def wildcard() -> "DFPattern":
 
 def has_type(ttype: tvm.ir.type.Type, pattern: "DFPattern" = None) -> "DFPattern":
     """
-    Syntatic sugar for creating a TypePattern
+    Syntactic sugar for creating a TypePattern
 
     Parameters
     ----------
@@ -350,7 +350,7 @@ def has_type(ttype: tvm.ir.type.Type, pattern: "DFPattern" = None) -> "DFPattern
 
 def has_dtype(dtype: str, pattern: "DFPattern" = None) -> "DFPattern":
     """
-    Syntatic sugar for creating a DataTypePattern
+    Syntactic sugar for creating a DataTypePattern
 
     Parameters
     ----------
@@ -372,7 +372,7 @@ def has_dtype(dtype: str, pattern: "DFPattern" = None) -> "DFPattern":
 
 def has_shape(shape: List[tvm.ir.PrimExpr], pattern: "DFPattern" = None) -> "DFPattern":
     """
-    Syntatic sugar for creating a ShapePattern
+    Syntactic sugar for creating a ShapePattern
 
     Parameters
     ----------
@@ -394,7 +394,7 @@ def has_shape(shape: List[tvm.ir.PrimExpr], pattern: "DFPattern" = None) -> "DFP
 
 def has_attr(attrs, pattern=None) -> "DFPattern":
     """
-    Syntatic sugar for creating an AttrPattern
+    Syntactic sugar for creating an AttrPattern
 
     Parameters
     ----------
@@ -416,7 +416,7 @@ def has_attr(attrs, pattern=None) -> "DFPattern":
 
 def dominates(parent: "DFPattern", path: "DFPattern", child: "DFPattern") -> "DFPattern":
     """
-    Syntatic sugar for creating an Dominator pattern
+    Syntactic sugar for creating an Dominator pattern
 
     Parameters
     ----------
