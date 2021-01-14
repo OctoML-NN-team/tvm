@@ -382,7 +382,12 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
     BNNS::Shape padding_dims_l = {PH_L, PW_L};
     BNNS::Shape padding_dims_r = {PH_R, PW_R};
 
-    auto weight_ext_data_hdl = data_entry_[EntryID(weight_entry)]->data;
+    auto weight_data_entry = data_entry_[EntryID(weight_entry)];
+    ICHECK(weight_data_entry) << "Convolution weights tensor should be constant and "
+                                 "available on initialization stage. Looks like weights "
+                                 "are not result of constant expression.";
+
+    auto weight_ext_data_hdl = weight_data_entry->data;
 
     // Memory descriptions.
     auto src_md = BindBNNSTensor(src_entry);
@@ -393,8 +398,13 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
 
     if (has_bias) {
       auto bias_entry = node.GetInputs()[2];
-      auto bias_ext_data_hdl = data_entry_[EntryID(bias_entry)]->data;
-      bias_md = BindBNNSTensor(bias_entry, bias_ext_data_hdl);
+      auto bias_data_entry = data_entry_[EntryID(bias_entry)];
+      ICHECK(bias_data_entry) << "Convolution bias tensor should be constant and "
+                                 "available on initialization stage. Looks like bias "
+                                 "is not result of constant expression.";
+
+      auto bias_data_hdl = bias_data_entry->data;
+      bias_md = BindBNNSTensor(bias_entry, bias_data_hdl);
     } else {
       bias_md = std::make_shared<BNNS::Tensor>(BNNS::Shape {OC}, BNNSDataTypeFloat32, nullptr);
     }
@@ -433,10 +443,12 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
 
     // TODO [apeskov]: Tmp WA, broadcast bias is here with tailing [1, 1]
     if (bias_candidate.size[0] == 1 && bias_candidate.size[1] == 1 &&
-        std::all_of(bias_candidate.size + 3, bias_candidate.size + BNNS_MAX_TENSOR_DIMENSION,
+        one_of(bias_candidate.size[3], 1, 0) &&
+        std::all_of(bias_candidate.size + 4, bias_candidate.size + BNNS_MAX_TENSOR_DIMENSION,
             [] ( size_t d) { return d == 0; })) {
-      bias_candidate.size[0] = bias_candidate.size[2];
-      bias_candidate.size[1] = bias_candidate.size[2] = 0;
+      auto element_count = bias_candidate.size[2];
+      std::fill(bias_candidate.size, bias_candidate.size + BNNS_MAX_TENSOR_DIMENSION, 0);
+      bias_candidate.size[0] = element_count;
     }
 
     BNNSLayerParametersConvolution conv_param = {

@@ -116,7 +116,8 @@ runtime::Module BNNSCompiler(const ObjectRef& ref) {
 
 TVM_REGISTER_GLOBAL("relay.ext.bnns").set_body_typed(BNNSCompiler);
 
-/*!
+
+/**
  * \brief A helper to expand the params by adding the ones used by BNNS runtime
  * for a given expression. Same as default ConstantUpdater but skip essential
  * BNNS composed function nodes.
@@ -138,13 +139,13 @@ struct BNNSConstantUpdater : public ConstantUpdater {
       this->VisitExpr(param);
     }
 
-    if (!isBNNSSpecificComposite(op)) {
+    if (!isBNNSSpecificCompositeFunc(op)) {
       this->VisitExpr(op->body);
     }
   }
 
  private:
-  bool isBNNSSpecificComposite(const FunctionNode* op) {
+  bool isBNNSSpecificCompositeFunc(const FunctionNode* op) {
     auto comp = op->GetAttr<String>(attr::kComposite);
     if (!comp)
       return false;
@@ -165,11 +166,11 @@ struct BNNSConstantUpdater : public ConstantUpdater {
 };
 
 Map<String, runtime::NDArray> BNNSConstantUpdaterFunc(Expr expr, std::string symbol) {
-  std::vector<std::string> filter_by_mask = {"bnns."};
+  std::vector<std::string> bnns_composite_filter = {"bnns."};
 
   // Visit all suitable constant nodes
   std::unordered_map<std::string, runtime::NDArray> res;
-  BNNSConstantUpdater const_updater(symbol, &res, filter_by_mask);
+  BNNSConstantUpdater const_updater(symbol, &res, bnns_composite_filter);
   const_updater(expr);
 
   // Convert to tvm::Map

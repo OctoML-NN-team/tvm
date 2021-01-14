@@ -40,7 +40,7 @@ to handle tensor processing. Particularly:
 """
 import math
 import tvm.ir
-from ...dataflow_pattern import wildcard, is_op, is_expr
+from ...dataflow_pattern import wildcard, is_op, is_expr, is_constant
 from .register import register_pattern_table, get_pattern_table
 
 from tvm.relay import transform
@@ -48,7 +48,7 @@ from tvm.relay.expr import const
 from tvm.relay.build_module import bind_params_by_name
 
 # Old style BNNS API are used for iOS < 14 and macOS < 11
-# TODO [xpeskov]: OS version should be extracted from target
+# TODO [apeskov]: OS version should be extracted from target
 use_old_bnns_api = False
 
 
@@ -77,8 +77,14 @@ def partition_for_bnns(mod, params=None):
             transform.FoldScaleAxis(),
             transform.DynamicToStatic(),
             transform.AlterOpLayout(),
+            # TODO(apeskov): WA. AlterOpLayout call lead to constants shape transformation
+            #   Some expand_dims op may appears after constants. It breaks BNNS fusing.
+            #   So we have to call FoldConstant right before bnns composite passes.
+            transform.FoldConstant(),
             transform.MergeComposite(get_pattern_table("bnns")),
             transform.AnnotateTarget("bnns"),
+            #   If you no need in per layer performance statistic you can
+            #   uncomment next line
             # transform.MergeCompilerRegions(),
             transform.PartitionGraph(),
         ]
@@ -110,8 +116,9 @@ def _register_external_op_helper(op_name, supported=True):
 
 _register_external_op_helper("nn.batch_matmul")
 
-# TODO [apeskov]: enlarge list of supported types
-#   plus clarify meaning of "" value
+# TODO [apeskov]:
+#   1. enlarge list of supported types on
+#   2. clarify meaning of "" value
 def dtype_is_supported(dtype):
     return dtype == "float32" or dtype == ""
 
@@ -130,7 +137,7 @@ def conv2d(expr):
         kernel_typ = args[1].checked_type
         if len(kernel_typ.shape) != 4 or kernel_typ.dtype != "float32":
             return False
-        # Asymetric pad case is not supported
+        # Asymmetric pad case is not supported
         if attrs.padding[0] != attrs.padding[2] or attrs.padding[1] != attrs.padding[3]:
             return False
 

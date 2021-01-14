@@ -36,6 +36,12 @@ from .infrastructure import (
     build_module,
 )
 
+# TODO: Missed cases
+#   1. Bias as add with 3d const tensor. Lead to additional unsqueeze op between
+#   2. Check unsupported cases of fusion. Like bias add with axis != 1, add with broadcast by spatial dims
+#   3. Check if bias/weights is not constants. Should fallback into LLVM or decompose it
+#   4. Check if bias/weights is constants expr. Should works somehow.
+
 def _get_model(
     shape,
     kernel_h,
@@ -68,12 +74,13 @@ def _get_model(
     )
     params = {"w": w}
     if bias_type == "bias_add":
-        b = tvm.nd.array(np.random.uniform(-128, 127, weight_shape[0]).astype(dtype))
+        b = tvm.nd.array(np.random.uniform(-10, 10, weight_shape[0]).astype(dtype))
         biasc = relay.const(b, dtype)
         out = relay.nn.bias_add(out, biasc, axis=1)
         params["b"] = b
-    elif bias_type == "add":
-        b = tvm.nd.array(np.random.uniform(-128, 127, (weight_shape[0], 1, 1)).astype(dtype))
+    elif bias_type == "add_3d" or bias_type == "add_4d":
+        bias_shape = (weight_shape[0], 1, 1) if bias_type == "add_3d" else (1, weight_shape[0], 1, 1)
+        b = tvm.nd.array(np.random.uniform(-10, 10, bias_shape).astype(dtype))
         biasc = relay.const(b, dtype)
         out = relay.add(out, biasc)
         params["b"] = b
@@ -101,7 +108,7 @@ def test_conv2d():
     input_shapes = [(10, 10, 14), (12, 15, 16), (20, 20, 20)]
     batches = [1, 2]
     groups = [1, 2]
-    bias_kind = ['none', 'add', 'bias.add']
+    bias_kind = ['none', 'add_3d', 'add_4d', 'bias.add']
     activation_kind = ['none', 'relu']
     dtype = "float32"
     trials = generate_trials(
@@ -113,7 +120,7 @@ def test_conv2d():
         shape = (batch, *input_shapes)
         outputs = []
         inputs = {
-            "a": tvm.nd.array(np.random.uniform(-128, 127, shape).astype(dtype)),
+            "a": tvm.nd.array(np.random.uniform(0, 127, shape).astype(dtype)),
         }
 
         func, params = _get_model(
@@ -144,7 +151,7 @@ def test_conv2d():
             "bias": bias,
             "activation": activation
         }
-        verify(outputs, atol=0.002, rtol=0.01, config=config)
+        verify(outputs, atol=0.002, rtol=0.007, config=config)
 
 
 if __name__ == "__main__":
