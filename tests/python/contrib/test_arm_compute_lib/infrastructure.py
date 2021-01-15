@@ -14,7 +14,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 from itertools import zip_longest, combinations
 import json
 import os
@@ -29,6 +28,7 @@ from tvm.contrib import graph_runtime
 from tvm.relay.op.contrib import arm_compute_lib
 from tvm.contrib import utils
 from tvm.autotvm.measure import request_remote
+
 
 class Device:
     """

@@ -100,7 +100,7 @@ def test_runtime_add():
             outputs = []
             func = _get_model(shape, dtype, iter(inputs), op, op_params)
             for acl in [True, False]:
-                outputs.append(build_and_run(func, inputs, 1, None, device, enable_framework=acl)[0])
+                outputs.append(build_and_run(func, inputs, 1, None, device, enable_acl=acl)[0])
 
             config = {
                 "shape": shape,
