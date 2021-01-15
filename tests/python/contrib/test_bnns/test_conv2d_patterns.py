@@ -1,0 +1,88 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+"""BNNS pattern detection check"""
+
+import tvm
+from tvm import relay
+import numpy as np
+
+from tvm.relay.op.contrib.bnns import partition_for_bnns
+
+
+def partition(exp):
+    mod = tvm.IRModule.from_expr(exp)
+    with tvm.transform.PassContext(opt_level=3):
+        mod = partition_for_bnns(mod)
+    return mod
+
+
+def is_op_fused(func, op_name):
+    is_fused = False
+
+    def visit(op):
+        if isinstance(op, tvm.relay.function.Function) \
+                and op_name in op.attrs["PartitionedFromPattern"]:
+            nonlocal is_fused
+            is_fused = True
+    tvm.relay.analysis.post_order_visit(func.body, visit)
+    return is_fused
+
+
+def test_pattern_conv2d_with_bias_add():
+    dtype = "float32"
+    for axis in (1, 2):
+        a = relay.var("a", shape=(2, 7, 8, 8), dtype=dtype)
+        w = relay.const(np.random.uniform(-10, 10, (8, 7, 3, 3)).astype(dtype))
+        res = relay.nn.conv2d(
+            a, w,
+            kernel_size=(3, 3), padding=(1, 1),
+            channels=8, out_dtype=dtype
+        )
+        b = relay.const(np.random.uniform(-10, 10, 8).astype(dtype))
+        res = relay.nn.bias_add(res, b, axis=axis)
+
+        mod = partition(res)
+
+        bias_is_fused = is_op_fused(mod["bnns_0"], "nn.bias_add")
+
+        assert bias_is_fused if axis == 1 else not bias_is_fused
+
+
+def test_pattern_conv2d_with_add():
+    dtype = "float32"
+    workloads = {
+        8: False,
+        (8, 1): False,
+        (8, 1, 1): True,
+        (1, 8, 1, 1): True
+    }
+
+    for b_shape, should_be_fused in workloads.items():
+        a = relay.var("a", shape=(2, 7, 8, 8), dtype=dtype)
+        w = relay.const(np.random.uniform(-10, 10, (8, 7, 3, 3)).astype(dtype))
+        res = relay.nn.conv2d(
+            a, w,
+            kernel_size=(3, 3), padding=(1, 1),
+            channels=8, out_dtype=dtype
+        )
+        b = relay.const(np.random.uniform(-10, 10, b_shape).astype(dtype))
+        res = relay.add(res, b)
+
+        mod = partition(res)
+        bias_is_fused = is_op_fused(mod["bnns_0"], "add")
+
+        assert bias_is_fused == should_be_fused

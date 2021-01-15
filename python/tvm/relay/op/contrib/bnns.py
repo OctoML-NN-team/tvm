@@ -47,11 +47,6 @@ from tvm.relay import transform
 from tvm.relay.expr import const
 from tvm.relay.build_module import bind_params_by_name
 
-# Old style BNNS API are used for iOS < 14 and macOS < 11
-# TODO [apeskov]: OS version should be extracted from target
-use_old_bnns_api = False
-
-
 def partition_for_bnns(mod, params=None):
     """Partition the graph greedily offloading supported
     operators to BNNS.
@@ -116,36 +111,44 @@ def _register_external_op_helper(op_name, supported=True):
 
 _register_external_op_helper("nn.batch_matmul")
 
+
 # TODO [apeskov]:
 #   1. enlarge list of supported types on
 #   2. clarify meaning of "" value
 def dtype_is_supported(dtype):
     return dtype == "float32" or dtype == ""
 
-@tvm.ir.register_op_attr("nn.conv2d", "target.bnns")
-def conv2d(expr):
-    """Check if the conv2d can be executed in BNNS."""
-    attrs, args = expr.attrs, expr.args
-    if use_old_bnns_api:
-        if attrs.groups != 1:
-            return False
-        if attrs.dilation[0] != 1 or attrs.dilation[1] != 1:
-            return False
-        data_typ = args[0].checked_type
-        if len(data_typ.shape) != 4 or data_typ.dtype != "float32":
-            return False
-        kernel_typ = args[1].checked_type
-        if len(kernel_typ.shape) != 4 or kernel_typ.dtype != "float32":
-            return False
-        # Asymmetric pad case is not supported
-        if attrs.padding[0] != attrs.padding[2] or attrs.padding[1] != attrs.padding[3]:
-            return False
 
+@tvm.ir.register_op_attr("nn.conv2d", "target.bnns")
+def conv2d_check(expr):
+    """Check if the conv2d can be executed in BNNS"""
+    attrs, args = expr.attrs, expr.args
+    data_typ = args[0].checked_type
+    if len(data_typ.shape) != 4 or data_typ.dtype != "float32":
+        return False
+    kernel_typ = args[1].checked_type
+    if len(kernel_typ.shape) != 4 or kernel_typ.dtype != "float32":
+        return False
     if attrs.data_layout != "NCHW":
         return False
     if not dtype_is_supported(attrs.out_dtype):
         return False
     return True
+
+
+def bias_check(expr):
+    """Check is bias added through the correct dimension"""
+    attrs, args = expr.attrs, expr.args
+    if expr.op.name == "nn.bias_add":
+        return attrs.axis == 1
+    elif expr.op.name == "add":
+        b_shape = args[1].checked_type.shape
+        if len(b_shape) == 4:
+            return bool(b_shape[0] == 1 and b_shape[2] == 1 and b_shape[3] == 1)
+        elif len(b_shape) == 3:
+            return bool(b_shape[1] == 1 and b_shape[2] == 1)
+
+    return False
 
 
 @tvm.ir.register_op_attr("nn.dense", "target.bnns")
@@ -177,10 +180,19 @@ def make_conv_relu_pattern(with_bias=True, with_relu=True):
 
 def check_conv(extract):
     """Check conv pattern is supported by BNNS."""
-    call = extract
-    while call.op.name != "nn.conv2d":
-        call = call.args[0]
-    return conv2d(call)
+    is_ok = True
+
+    def visit(op):
+        nonlocal is_ok
+        print(op)
+        if isinstance(op, tvm.relay.Call):
+            if op.op.name == "nn.conv2d":
+                is_ok &= conv2d_check(op)
+            elif op.op.name in ("nn.bias_add", "add"):
+                is_ok &= bias_check(op)
+
+    tvm.relay.analysis.post_order_visit(extract, visit)
+    return is_ok
 
 
 def make_dense_bias_pattern():
