@@ -33,7 +33,7 @@ from .infrastructure import (
 )
 
 
-def _get_model(a_shape, b_shape, dtype, var_names, is_a_constant = False, is_b_constant = False):
+def _get_model(a_shape, b_shape, dtype, var_names, is_a_constant=False, is_b_constant=False):
     """Return a model and any parameters it may have"""
     a = relay.var(next(var_names), shape=a_shape, dtype=dtype)
     b = relay.var(next(var_names), shape=b_shape, dtype=dtype)
@@ -63,6 +63,9 @@ def test_matmul():
     shape = [
         ((1, 4, 3), (1, 4, 3)),
         ((1, 32, 128), (1, 128, 128)),
+        ((2, 1, 3), (2, 1, 3)),
+        ((2, 16, 32), (2, 32, 32)),
+        ((5, 1, 3), (5, 1, 3)),
     ]
     trials = generate_trials([dtype, shape], 3)
 
@@ -75,7 +78,7 @@ def test_matmul():
                     "b": tvm.nd.array(np.random.uniform(-128, 127, b_shape).astype(dtype)),
                 }
                 func, params = _get_model(
-                    a_shape, b_shape, dtype, var_names=iter(inputs), is_a_constant=is_a_constant, is_b_constant=is_b_constant
+                    a_shape, b_shape, dtype, var_names=iter(inputs), is_a_constant=False, is_b_constant=True
                 )
                 for bnns in [False, True]:
                     outputs.append(

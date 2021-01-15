@@ -30,6 +30,7 @@
 #include <string>
 #include <vector>
 #include <numeric>
+#include <unordered_map>
 
 #include "../json/json_node.h"
 #include "../json/json_runtime.h"
@@ -221,11 +222,11 @@ namespace BNNS {
       }
     }
 
-    void execute(std::vector<Tensor*> srcs, Tensor &dst) {
+    void execute(std::vector<Tensor*> srcs, Tensor &dst, int forceBatchSize = -1) {
       ICHECK_LE(srcs.size(), 2) << "Currently BNNS runtime supports primitives with only 1 or 2 "
                                    "data inputs.";
 
-      run_ctx ctx { this, srcs[0], nullptr, &dst };
+      run_ctx ctx { this, srcs[0], nullptr, &dst, forceBatchSize };
       if (srcs.size() > 1)
         ctx.src2 = srcs[1];
 
@@ -245,6 +246,7 @@ namespace BNNS {
       const Tensor *src1;
       const Tensor *src2;
       Tensor *dst;
+      const int force_batch_size;
     };
 
     static int run_task(int task_id, TVMParallelGroupEnv* penv, void* cdata) {
@@ -279,7 +281,7 @@ namespace BNNS {
         ICHECK(src2_mb == dst_mb) << "Mismatch of batch dimension of input/output tensors";
       }
 
-      const auto mb = dst_mb;
+      const auto mb = (ctx->force_batch_size == -1) ? dst_mb : ctx->force_batch_size;
 
       // NB! Limitations
       //   * Do not use simple BNNSFilterApply. There is a bug inside BNNS,
@@ -365,7 +367,9 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
       for (auto arg_id : prim_args_[i])
         args.push_back(entry_out_mem_.at(arg_id).get());
 
-      primitives_.at(i)->execute(args, *res);
+      int forceBatchSize =
+          (force_batch_size_.find(i) == force_batch_size_.end()) ? -1 : force_batch_size_.at(i);
+      primitives_.at(i)->execute(args, *res, forceBatchSize);
     }
   }
 
@@ -728,9 +732,9 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
     BNNSNDArrayDescriptor a_desc = a_md->get_nd_desc();
     BNNSNDArrayDescriptor b_desc = b_md->get_nd_desc();
     BNNSNDArrayDescriptor out_desc = dst_md->get_nd_desc();
-    a_desc.layout = BNNSDataLayoutRowMajorMatrix;
-    b_desc.layout = BNNSDataLayoutRowMajorMatrix;
-    out_desc.layout = BNNSDataLayoutRowMajorMatrix;
+    std::reverse(a_desc.size, a_desc.size + 3);
+    std::reverse(b_desc.size, b_desc.size + 3);
+    std::reverse(out_desc.size, out_desc.size + 3);
     a_desc.data = a_data;
     b_desc.data = b_data;
 
@@ -757,6 +761,7 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
         args.push_back(EntryID(b_entry));
     prim_args_.push_back(std::move(args));
     prim_results_.push_back(EntryID(dst_entry));
+    force_batch_size_.insert({prim_args_.size() - 1, 1});
   }
 
   BNNS::Dtype convertToBNNS(const DLDataType &dl_dtype) {
@@ -785,6 +790,7 @@ class BNNSJSONRuntime : public JSONRuntimeBase {
   std::vector<std::shared_ptr<BNNS::Primitive>> primitives_;
   std::vector<std::vector<uint32_t>> prim_args_;
   std::vector<uint32_t> prim_results_;
+  std::unordered_map<uint32_t, uint32_t> force_batch_size_;
 
   /* The entry ID to its corresponding output memory. */
   std::unordered_map<uint32_t, std::shared_ptr<BNNS::Tensor>> entry_out_mem_;
