@@ -16,24 +16,18 @@
 # under the License.
 """BNNS integration conv2d tests."""
 
-import sys
-sys.path.append('..')
-
 import numpy as np
 
 import tvm
 from tvm import relay
 
-from common.infrastructure import (
-    build_and_run,
-    verify,
-    generate_trials,
-)
 from .infrastructure import Device
 from .infrastructure import (
     skip_runtime_test,
     skip_codegen_test,
-    build_module,
+    build_and_run,
+    verify,
+    generate_trials,
 )
 
 # TODO: Missed cases
@@ -91,8 +85,6 @@ def _get_model(
 
 
 def test_conv2d():
-    Device.load("test_config.json")
-
     if skip_runtime_test():
         return
 
@@ -138,7 +130,7 @@ def test_conv2d():
             activation_type=activation,
         )
         for bnns in [False, True]:
-            outputs.append(build_and_run(func, inputs, 1, params, device, build_module, enable_framework=bnns)[0])
+            outputs.append(build_and_run(func, inputs, 1, params, device, enable_bnns=bnns)[0])
 
         config = {
             "shape": shape,

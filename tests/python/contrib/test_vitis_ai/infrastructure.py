@@ -21,8 +21,6 @@
 import sys
 import numpy as np
 
-sys.path.append('..')
-
 import pytest
 
 pytest.importorskip("pyxir")
@@ -39,7 +37,24 @@ from tvm.contrib.target import vitis_ai
 from tvm.contrib import graph_runtime
 from tvm.contrib import utils
 
-from common.infrastructure import get_cpu_op_count
+
+def get_cpu_op_count(mod):
+    """Traverse graph counting ops offloaded to TVM."""
+
+    class Counter(tvm.relay.ExprVisitor):
+        def __init__(self):
+            super().__init__()
+            self.count = 0
+
+        def visit_call(self, call):
+            if isinstance(call.op, tvm.ir.Op):
+                self.count += 1
+
+            super().visit_call(call)
+
+    c = Counter()
+    c.visit(mod["main"])
+    return c.count
 
 
 def skip_test():

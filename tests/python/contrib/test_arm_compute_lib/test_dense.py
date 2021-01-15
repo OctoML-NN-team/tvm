@@ -21,17 +21,13 @@ import numpy as np
 import tvm
 from tvm import relay
 from tvm import testing
-from common.infrastructure import (
-    build_and_run,
-    verify,
-    generate_trials,
-)
-from .infrastructure import (
+from test_arm_compute_lib.infrastructure import (
     Device,
     skip_runtime_test,
     skip_codegen_test,
+    build_and_run,
+    verify,
     verify_codegen,
-    build_module,
 )
 
 
@@ -213,8 +209,7 @@ def test_dense():
                     1,
                     params,
                     device,
-                    build_module,
-                    enable_framework=acl,
+                    enable_acl=acl,
                     tvm_ops=(1 - acl_partitions) * (2 - int(not composite)),
                     acl_partitions=acl_partitions,
                 )[0]
@@ -315,10 +310,9 @@ def test_qnn_dense():
                     1,
                     params,
                     device,
-                    build_module,
                     tvm_ops=(1 - acl_partitions) * (3 - int(not composite)),
                     acl_partitions=acl_partitions,
-                    enable_framework=acl,
+                    enable_acl=acl,
                 )[0]
             )
 

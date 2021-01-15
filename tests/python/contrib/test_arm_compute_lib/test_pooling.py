@@ -22,15 +22,12 @@ import tvm
 from tvm import relay
 from tvm import testing
 
-from common.infrastructure import (
-    build_and_run,
-    verify,
-)
 from test_arm_compute_lib.infrastructure import (
     skip_runtime_test,
     skip_codegen_test,
+    build_and_run,
+    verify,
     verify_codegen,
-    build_module,
 )
 from test_arm_compute_lib.infrastructure import Device
 
@@ -223,7 +220,7 @@ def test_pooling():
 
         for acl in [False, True]:
             outputs.append(
-                build_and_run(func, inputs, 1, None, device, build_module, enable_framework=acl, config=config)[0]
+                build_and_run(func, inputs, 1, None, device, enable_acl=acl, config=config)[0]
             )
 
         verify(outputs, atol=atol, rtol=rtol, config=config, verify_saturation=verify_saturation)
@@ -271,7 +268,7 @@ def test_global_pooling():
 
         for acl in [False, True]:
             outputs.append(
-                build_and_run(func, inputs, 1, None, device, build_module, enable_framework=acl, config=config)[0]
+                build_and_run(func, inputs, 1, None, device, enable_acl=acl, config=config)[0]
             )
 
         verify(outputs, atol=atol, rtol=rtol, config=config, verify_saturation=verify_saturation)

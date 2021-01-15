@@ -22,17 +22,14 @@ import math
 import tvm
 from tvm import relay
 from tvm import testing
-from common.infrastructure import (
-    build_and_run,
-    verify,
-    generate_trials,
-)
 from .infrastructure import (
     Device,
     skip_runtime_test,
     skip_codegen_test,
-    build_module,
+    build_and_run,
+    verify,
     verify_codegen,
+    generate_trials,
 )
 
 
@@ -143,8 +140,7 @@ def test_dense():
                     1,
                     params,
                     device,
-                    build_module,
-                    enable_framework=bnns,
+                    enable_bnns=bnns,
                 )[0]
             )
 
