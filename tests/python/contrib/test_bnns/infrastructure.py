@@ -25,12 +25,11 @@ import numpy as np
 import tvm
 from tvm import relay
 from tvm import rpc
-from tvm.relay import transform
 from tvm.contrib import graph_runtime
-from tvm.relay.op.contrib.register import get_pattern_table
 from tvm.relay.op.contrib.bnns import partition_for_bnns
 from tvm.contrib import utils
 from tvm.autotvm.measure import request_remote
+
 
 class Device:
     """
@@ -124,6 +123,7 @@ class Device:
 
 Device.target = "llvm"
 
+
 def skip_runtime_test():
     """Skip test if it requires the runtime and it's not present."""
     # BNNS codegen not present.
@@ -140,7 +140,7 @@ def skip_codegen_test():
         return True
 
 
-def build_module(mod, target, params=None, enable_bnns=True, tvm_ops=0, acl_partitions=1):
+def build_module(mod, target, params=None, enable_bnns=True, tvm_ops=0):
     """Build module with option to build for BNNS."""
     if isinstance(mod, tvm.relay.expr.Call):
         mod = tvm.IRModule.from_expr(mod)
@@ -160,7 +160,6 @@ def build_and_run(
     enable_bnns=True,
     no_runs=1,
     tvm_ops=0,
-    acl_partitions=1,
     config=None,
 ):
     """Build and run the relay module."""
@@ -168,7 +167,7 @@ def build_and_run(
         config = {}
 
     try:
-        lib = build_module(mod, device.target, params, enable_bnns, tvm_ops, acl_partitions)
+        lib = build_module(mod, device.target, params, enable_bnns, tvm_ops)
     except Exception as e:
         err_msg = "The module could not be built.\n"
         if config:
