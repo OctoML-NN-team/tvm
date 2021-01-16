@@ -22,8 +22,10 @@ import numpy as np
 
 from tvm.relay.op.contrib.bnns import partition_for_bnns
 
+fp32 = "float32"
 
 def partition(exp):
+    """Apply BNNS specific partitioning transformation"""
     mod = tvm.IRModule.from_expr(exp)
     with tvm.transform.PassContext(opt_level=3):
         mod = partition_for_bnns(mod)
@@ -34,9 +36,6 @@ def is_op_fused(func, op_name):
     is_fused = False
 
     def visit(op):
-        if isinstance(op, tvm.relay.function.Function):
-            print(op.attrs["PartitionedFromPattern"])
-
         if isinstance(op, tvm.relay.function.Function) \
                 and op_name in op.attrs["PartitionedFromPattern"]:
             nonlocal is_fused
@@ -46,16 +45,15 @@ def is_op_fused(func, op_name):
 
 
 def test_pattern_conv2d_with_bias_add():
-    dtype = "float32"
     for axis in (1, 2):
-        a = relay.var("a", shape=(2, 7, 8, 8), dtype=dtype)
-        w = relay.const(np.random.uniform(-10, 10, (8, 7, 3, 3)).astype(dtype))
+        a = relay.var("a", shape=(2, 7, 8, 8), dtype=fp32)
+        w = relay.const(np.random.uniform(-10, 10, (8, 7, 3, 3)).astype(fp32))
         res = relay.nn.conv2d(
             a, w,
             kernel_size=(3, 3), padding=(1, 1),
-            channels=8, out_dtype=dtype
+            channels=8, out_dtype=fp32
         )
-        b = relay.const(np.random.uniform(-10, 10, 8).astype(dtype))
+        b = relay.const(np.random.uniform(-10, 10, 8).astype(fp32))
         res = relay.nn.bias_add(res, b, axis=axis)
 
         mod = partition(res)
@@ -65,7 +63,6 @@ def test_pattern_conv2d_with_bias_add():
 
 
 def test_pattern_conv2d_with_add():
-    dtype = "float32"
     workloads = {
         8: False,
         (8, 1): False,
@@ -74,14 +71,14 @@ def test_pattern_conv2d_with_add():
     }
 
     for b_shape, should_be_fused in workloads.items():
-        a = relay.var("a", shape=(2, 7, 8, 8), dtype=dtype)
-        w = relay.const(np.random.uniform(-10, 10, (8, 7, 3, 3)).astype(dtype))
+        a = relay.var("a", shape=(2, 7, 8, 8), dtype=fp32)
+        w = relay.const(np.random.uniform(-10, 10, (8, 7, 3, 3)).astype(fp32))
         res = relay.nn.conv2d(
             a, w,
             kernel_size=(3, 3), padding=(1, 1),
-            channels=8, out_dtype=dtype
+            channels=8, out_dtype=fp32
         )
-        b = relay.const(np.random.uniform(-10, 10, b_shape).astype(dtype))
+        b = relay.const(np.random.uniform(-10, 10, b_shape).astype(fp32))
         res = relay.add(res, b)
 
         mod = partition(res)
@@ -91,18 +88,17 @@ def test_pattern_conv2d_with_add():
 
 
 def test_pattern_conv2d_with_non_cons_weights():
-    dtype = "float32"
     for const_weights in (True, False):
-        a = relay.var("a", shape=(2, 7, 8, 8), dtype=dtype)
+        a = relay.var("a", shape=(2, 7, 8, 8), dtype=fp32)
         if const_weights:
-            w = relay.const(np.random.uniform(-10, 10, (8, 7, 3, 3)).astype(dtype))
+            w = relay.const(np.random.uniform(-10, 10, (8, 7, 3, 3)).astype(fp32))
         else:
-            w = relay.var("w", shape=(8, 7, 3, 3), dtype=dtype)
+            w = relay.var("w", shape=(8, 7, 3, 3), dtype=fp32)
 
         res = relay.nn.conv2d(
             a, w,
             kernel_size=(3, 3), padding=(1, 1),
-            channels=8, out_dtype=dtype
+            channels=8, out_dtype=fp32
         )
 
         mod = partition(res)
@@ -112,15 +108,14 @@ def test_pattern_conv2d_with_non_cons_weights():
 
 
 def test_pattern_conv2d_with_non_cons_bias():
-    dtype = "float32"
-    a = relay.var("a", shape=[2, 7, 8, 8], dtype=dtype)
-    w = relay.const(np.random.uniform(-10, 10, (8, 7, 3, 3)).astype(dtype))
+    a = relay.var("a", shape=[2, 7, 8, 8], dtype=fp32)
+    w = relay.const(np.random.uniform(-10, 10, (8, 7, 3, 3)).astype(fp32))
     res = relay.nn.conv2d(
         a, w,
         kernel_size=(3, 3), padding=(1, 1),
-        channels=8, out_dtype=dtype
+        channels=8, out_dtype=fp32
     )
-    b = relay.var("b", shape=[8], dtype=dtype)
+    b = relay.var("b", shape=[8], dtype=fp32)
     res = relay.nn.bias_add(res, b, axis=1)
 
     mod = partition(res)
