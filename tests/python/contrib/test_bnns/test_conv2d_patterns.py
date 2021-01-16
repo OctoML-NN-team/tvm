@@ -34,6 +34,9 @@ def is_op_fused(func, op_name):
     is_fused = False
 
     def visit(op):
+        if isinstance(op, tvm.relay.function.Function):
+            print(op.attrs["PartitionedFromPattern"])
+
         if isinstance(op, tvm.relay.function.Function) \
                 and op_name in op.attrs["PartitionedFromPattern"]:
             nonlocal is_fused
@@ -56,7 +59,6 @@ def test_pattern_conv2d_with_bias_add():
         res = relay.nn.bias_add(res, b, axis=axis)
 
         mod = partition(res)
-
         bias_is_fused = is_op_fused(mod["bnns_0"], "nn.bias_add")
 
         assert bias_is_fused if axis == 1 else not bias_is_fused
@@ -86,3 +88,42 @@ def test_pattern_conv2d_with_add():
         bias_is_fused = is_op_fused(mod["bnns_0"], "add")
 
         assert bias_is_fused == should_be_fused
+
+
+def test_pattern_conv2d_with_non_cons_weights():
+    dtype = "float32"
+    for const_weights in (True, False):
+        a = relay.var("a", shape=(2, 7, 8, 8), dtype=dtype)
+        if const_weights:
+            w = relay.const(np.random.uniform(-10, 10, (8, 7, 3, 3)).astype(dtype))
+        else:
+            w = relay.var("w", shape=(8, 7, 3, 3), dtype=dtype)
+
+        res = relay.nn.conv2d(
+            a, w,
+            kernel_size=(3, 3), padding=(1, 1),
+            channels=8, out_dtype=dtype
+        )
+
+        mod = partition(res)
+        use_bnns = len(mod.get_global_vars()) == 2  # GlobalVar: "main" and "bnns_0"
+
+        assert use_bnns == const_weights
+
+
+def test_pattern_conv2d_with_non_cons_bias():
+    dtype = "float32"
+    a = relay.var("a", shape=[2, 7, 8, 8], dtype=dtype)
+    w = relay.const(np.random.uniform(-10, 10, (8, 7, 3, 3)).astype(dtype))
+    res = relay.nn.conv2d(
+        a, w,
+        kernel_size=(3, 3), padding=(1, 1),
+        channels=8, out_dtype=dtype
+    )
+    b = relay.var("b", shape=[8], dtype=dtype)
+    res = relay.nn.bias_add(res, b, axis=1)
+
+    mod = partition(res)
+    bias_is_fused = is_op_fused(mod["bnns_0"], "nn.bias_add")
+
+    assert not bias_is_fused

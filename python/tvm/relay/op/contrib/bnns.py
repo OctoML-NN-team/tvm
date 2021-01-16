@@ -126,6 +126,8 @@ def conv2d_check(expr):
     data_typ = args[0].checked_type
     if len(data_typ.shape) != 4 or data_typ.dtype != "float32":
         return False
+    if not isinstance(args[1], tvm.relay.expr.Constant):
+        return False
     kernel_typ = args[1].checked_type
     if len(kernel_typ.shape) != 4 or kernel_typ.dtype != "float32":
         return False
@@ -139,6 +141,8 @@ def conv2d_check(expr):
 def bias_check(expr):
     """Check is bias added through the correct dimension"""
     attrs, args = expr.attrs, expr.args
+    if not isinstance(args[1], tvm.relay.expr.Constant):
+        return False
     if expr.op.name == "nn.bias_add":
         return attrs.axis == 1
     elif expr.op.name == "add":
@@ -184,7 +188,6 @@ def check_conv(extract):
 
     def visit(op):
         nonlocal is_ok
-        print(op)
         if isinstance(op, tvm.relay.Call):
             if op.op.name == "nn.conv2d":
                 is_ok &= conv2d_check(op)
