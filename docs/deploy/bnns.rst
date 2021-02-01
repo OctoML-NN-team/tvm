@@ -27,16 +27,25 @@ for inference (and train). It’s supported in macOS, iOS, tvOS, and watchOS. BN
 primitives executed on all CPU supported on those platforms and optimized for high performance
 and low-energy consumption. This integration will offload as many operators as possible from Relay to BNNS.
 
-This guide will demonstrate how to build TVM with BNNS BYOC and runtime enabled. It will also provide example
+BNNS runtime is a part of platform API and available on all modern Apple operating systems.
+Application using BNNS will not depends on any additional external dependencies.
+
+BNNS functions uses Apple private hardware capabilities which are not exposed yet by Apple. Example
+of such capabilities can be AMX Apple cpu extension.
+
+This guide will demonstrate how to build TVM with BNNS codegen and runtime enabled. It will also provide example
 code to compile and run models using BNNS runtime. Finally, we document the supported operators.
 
 Building TVM with BNNS support
 ----------------------------------
 
-To turn on TVM BNNS BYOC and TVM BNNS runtime you need to turn on the only USE_BNNS flag
+To turn on TVM BNNS codegen and TVM BNNS runtime you need to turn on the only USE_BNNS flag
 
 * USE_BNNS=ON/OFF - This flag will enable compiling a network with offloading subgraphs to BNNS primitives
   and will link tvm library to the BNNS runtime module.
+
+Enabling of this flag will cause to search the default Accelerate Frameworks on current target SDK.
+The minimal versions of required SDK is macOS 11.0, iOS 14.0, tvOS 14.0 and watchOS 7.0.
 
 Example setting in config.cmake file:
 
@@ -51,9 +60,11 @@ Operations to be offloaded on BNNS execution must be annotated before passing of
 All opps annotated by `partition_for_bnns` will be offloaded for BNNS execution. The rest of the ops
 will go through the LLVM compilation and code generation.
 
-Important note: `partition_for_bnns` requires to freeze parameters before the annotations of ops for BNNS.
-This can be done by passing of special parameters to some importers like `from_onnx(onnx_model, freeze_params=True)`
-or to pass params to `partition_for_bnns` function
+Important note: BNNS support primitives only with constant weights. To satisfy this requirements we have
+to map constants to related tensor abstraction in relay representation. To freeze tensors and operate
+with them as with constants you may need to call ONNX importer with special flag "freeze_params=True"
+or performer binding manually. In general cases all relay importers don't do that be default.
+For your convenience "partition_for_bnns" can do this for you if params dictionary is passed as the argument.
 
 .. code:: python
 
@@ -87,7 +98,7 @@ Example of input layouts change:
                                             "nn.relu": ["NCHW"]})(mod)
 
 
-Build and Deploy Mobilenet v2 1.0 with BNNS
+Example: Build and Deploy Mobilenet v2 1.0 with BNNS
 ----------------------------------------
 
 Create a Relay graph from a MXNet Mobilenet v2 1.0 model.
@@ -156,13 +167,14 @@ Operator support
 +========================+==============================================================================+
 | nn.conv2d              |                                                                              |
 +------------------------+------------------------------------------------------------------------------+
-| nn.batch_norm          |                                                                              |
+| nn.batch_norm          | Supported by BNNS integration only in nn.conv2d-batch_norm pattern           |
 +------------------------+------------------------------------------------------------------------------+
 | nn.dense               |                                                                              |
 +------------------------+------------------------------------------------------------------------------+
 | nn.batch_matmul        |                                                                              |
 +------------------------+------------------------------------------------------------------------------+
-| nn.bias_add            | Supported by BNNS integration only as a part of nn.conv2d or nn.dense fusion |
+| nn.bias_add            | Supported by BNNS integration only as a bias part of nn.conv2d or nn.dense   |
+|                        | fusion                                                                       |
 +------------------------+------------------------------------------------------------------------------+
 | add                    | Supported by BNNS integration only as a part of nn.conv2d or nn.dense fusion |
 +------------------------+------------------------------------------------------------------------------+
