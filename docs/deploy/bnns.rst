@@ -63,7 +63,7 @@ will go through the LLVM compilation and code generation.
 Important note: BNNS support primitives only with constant weights. To satisfy this requirements we have
 to map constants to related tensor abstraction in relay representation. To freeze tensors and operate
 with them as with constants you may need to call ONNX importer with special flag "freeze_params=True"
-or performer binding manually. In general cases all relay importers don't do that be default.
+or performer binding manually. In general cases all relay importers don't do that by default.
 For your convenience "partition_for_bnns" can do this for you if params dictionary is passed as the argument.
 
 .. code:: python
@@ -176,7 +176,7 @@ Operator support
 | nn.bias_add            | Supported by BNNS integration only as a bias part of nn.conv2d or nn.dense   |
 |                        | fusion                                                                       |
 +------------------------+------------------------------------------------------------------------------+
-| add                    | Supported by BNNS integration only as a part of nn.conv2d or nn.dense fusion |
+| add                    | Supported by BNNS integration only as a bias part of nn.conv2d or nn.dense fusion |
 +------------------------+------------------------------------------------------------------------------+
 | nn.relu                | Supported by BNNS integration only as a part of nn.conv2d or nn.dense fusion |
 +------------------------+------------------------------------------------------------------------------+
