@@ -382,10 +382,12 @@ add_lib_info(${CMAKE_CURRENT_LIST_DIR}/src/support/libinfo.cc)
 
 add_library(tvm_objs OBJECT ${COMPILER_SRCS})
 add_library(tvm_runtime_objs OBJECT ${RUNTIME_SRCS})
+target_include_directories(tvm_runtime_objs  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/3rdparty/macho-loader/include)
 
 add_library(tvm SHARED $<TARGET_OBJECTS:tvm_objs> $<TARGET_OBJECTS:tvm_runtime_objs>)
 set_property(TARGET tvm APPEND PROPERTY LINK_OPTIONS "${TVM_VISIBILITY_FLAG}")
 add_library(tvm_runtime SHARED $<TARGET_OBJECTS:tvm_runtime_objs>)
+target_link_libraries(tvm_runtime macho_loader)
 set_property(TARGET tvm_runtime APPEND PROPERTY LINK_OPTIONS "${TVM_VISIBILITY_FLAG}")
 
 if(USE_MICRO)
@@ -543,3 +545,5 @@ if(MSVC)
   target_compile_definitions(tvm_objs PRIVATE -DTVM_EXPORTS)
   target_compile_definitions(tvm_runtime_objs PRIVATE -DTVM_EXPORTS)
 endif()
+
+add_subdirectory(3rdparty/macho-loader)
