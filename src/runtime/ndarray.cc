@@ -19,7 +19,7 @@
 
 /*!
  * \file ndarray.cc
- * \brief NDArray container infratructure.
+ * \brief NDArray container infrastructure.
  */
 #include <tvm/runtime/c_runtime_api.h>
 #include <tvm/runtime/device_api.h>
