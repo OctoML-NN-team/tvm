@@ -21,37 +21,21 @@
  * \file TVMRuntime.mm
  */
 #include "TVMRuntime.h"
-// Runtime API
-#include "../../../src/runtime/c_runtime_api.cc"
-#include "../../../src/runtime/cpu_device_api.cc"
-#include "../../../src/runtime/dso_library.cc"
-#include "../../../src/runtime/file_utils.cc"
-#include "../../../src/runtime/library_module.cc"
-#include "../../../src/runtime/metadata_module.cc"
-#include "../../../src/runtime/module.cc"
-#include "../../../src/runtime/ndarray.cc"
-#include "../../../src/runtime/object.cc"
-#include "../../../src/runtime/registry.cc"
-#include "../../../src/runtime/system_library.cc"
-#include "../../../src/runtime/thread_pool.cc"
-#include "../../../src/runtime/threading_backend.cc"
-#include "../../../src/runtime/workspace_pool.cc"
+#include <tvm/runtime/module.h>
+#include <runtime/rpc/rpc_channel.h>
+#include <runtime/rpc/rpc_endpoint.h>
+#include <runtime/file_utils.h>
 
-// RPC server
-#include "../../../src/runtime/rpc/rpc_channel.cc"
-#include "../../../src/runtime/rpc/rpc_endpoint.cc"
-#include "../../../src/runtime/rpc/rpc_local_session.cc"
-#include "../../../src/runtime/rpc/rpc_module.cc"
-#include "../../../src/runtime/rpc/rpc_server_env.cc"
-#include "../../../src/runtime/rpc/rpc_session.cc"
-#include "../../../src/runtime/rpc/rpc_socket_impl.cc"
-// Graph runtime
-#include "../../../src/runtime/graph/graph_runtime.cc"
-// Metal
-#include "../../../src/runtime/metal/metal_device_api.mm"
-#include "../../../src/runtime/metal/metal_module.mm"
-// CoreML
-#include "../../../src/runtime/contrib/coreml/coreml_runtime.mm"
+#include <fstream>
+
+namespace tvm {
+namespace runtime {
+
+std::shared_ptr<RPCEndpoint> RPCConnect(std::string url, int port, std::string key,
+                                        TVMArgs init_seq);
+
+}
+}
 
 namespace dmlc {
 // Override logging mechanism
@@ -131,14 +115,8 @@ TVM_REGISTER_GLOBAL("tvm.rpc.server.load_module").set_body([](TVMArgs args, TVMR
   std::string name = args[0];
   std::string fmt = GetFileFormat(name, "");
   NSString* base;
-  if (fmt == "dylib") {
-    // only load dylib from frameworks.
-    NSBundle* bundle = [NSBundle mainBundle];
-    base = [[bundle privateFrameworksPath] stringByAppendingPathComponent:@"tvm"];
-  } else {
-    // Load other modules in tempdir.
-    base = NSTemporaryDirectory();
-  }
+  base = NSTemporaryDirectory();
+
   NSString* path =
       [base stringByAppendingPathComponent:[NSString stringWithUTF8String:name.c_str()]];
   name = [path UTF8String];
