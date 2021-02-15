@@ -26,6 +26,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		015C84EF25D2B704008E693D /* libtvm_runtime.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 015C84EE25D2B704008E693D /* libtvm_runtime.dylib */; };
+		015C84F825D2BB2D008E693D /* libtvm_runtime.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 015C84EE25D2B704008E693D /* libtvm_runtime.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		C02637501F1C25E8007247A9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C026374F1F1C25E8007247A9 /* main.m */; };
 		C02637531F1C25E8007247A9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = C02637521F1C25E8007247A9 /* AppDelegate.m */; };
 		C02637591F1C25E8007247A9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C02637571F1C25E8007247A9 /* Main.storyboard */; };
@@ -47,7 +49,22 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		015C84F925D2BB2D008E693D /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				015C84F825D2BB2D008E693D /* libtvm_runtime.dylib in Embed Libraries */,
+			);
+			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		015C84EE25D2B704008E693D /* libtvm_runtime.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtvm_runtime.dylib; path = "../../../cmake-build-debug-ios/libtvm_runtime.dylib"; sourceTree = "<group>"; };
 		C026374B1F1C25E8007247A9 /* tvmrpc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tvmrpc.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C026374F1F1C25E8007247A9 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		C02637511F1C25E8007247A9 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -72,6 +89,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D7685AD324390EAE00D1469C /* CoreML.framework in Frameworks */,
+				015C84EF25D2B704008E693D /* libtvm_runtime.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -109,6 +127,7 @@
 		C026374D1F1C25E8007247A9 /* tvmrpc */ = {
 			isa = PBXGroup;
 			children = (
+				015C84EE25D2B704008E693D /* libtvm_runtime.dylib */,
 				C02637681F1C26AF007247A9 /* ViewController.mm */,
 				C02637671F1C269B007247A9 /* TVMRuntime.h */,
 				C02637651F1C2690007247A9 /* TVMRuntime.mm */,
@@ -160,6 +179,7 @@
 				C02637481F1C25E8007247A9 /* Frameworks */,
 				C02637491F1C25E8007247A9 /* Resources */,
 				C05A2C901F1E683A00D4798B /* ShellScript */,
+				015C84F925D2BB2D008E693D /* Embed Libraries */,
 			);
 			buildRules = (
 			);
@@ -414,15 +434,18 @@
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				DEVELOPMENT_TEAM = 3FR42MXLK9;
+				ENABLE_BITCODE = NO;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
 					../../include,
 					../../3rdparty/dlpack/include,
 					"../../3rdparty/dmlc-core/include",
+					../../src,
 				);
 				INFOPLIST_FILE = tvmrpc/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = org.apache.tvmrpc;
+				LIBRARY_SEARCH_PATHS = "../../cmake-build-debug-ios";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.apache.tvmrpc";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -434,15 +457,18 @@
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				DEVELOPMENT_TEAM = 3FR42MXLK9;
+				ENABLE_BITCODE = NO;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
 					../../include,
 					../../3rdparty/dlpack/include,
 					"../../3rdparty/dmlc-core/include",
+					../../src,
 				);
 				INFOPLIST_FILE = tvmrpc/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = org.apache.tvmrpc;
+				LIBRARY_SEARCH_PATHS = "../../cmake-build-debug-ios";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.apache.tvmrpc";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
