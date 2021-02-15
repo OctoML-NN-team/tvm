@@ -45,6 +45,7 @@
 
 #include "ImageLoader.h"
 
+namespace tvm_exp {
 
 uint32_t								ImageLoader::fgImagesUsedFromSharedCache = 0;
 uint32_t								ImageLoader::fgImagesWithUsedPrebinding = 0;
@@ -1938,8 +1939,9 @@ void ImageLoader::forEachReExportDependent( void (^callback)(const ImageLoader*,
 	}
 }
 
+}
 
-VECTOR_NEVER_DESTRUCTED_IMPL(ImageLoader::InterposeTuple);
+VECTOR_NEVER_DESTRUCTED_IMPL(tvm_exp::ImageLoader::InterposeTuple);
 //VECTOR_NEVER_DESTRUCTED_IMPL(ImagePair);
 
 

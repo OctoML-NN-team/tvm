@@ -1,13 +1,16 @@
 
 #include <tvm_dlfcn.h>
 #include "ImageLoaderMachO.h"
+#include "unsafe_loader.h"
 
 #include <fstream>
+#include <dlfcn.h>
+
+using namespace tvm_exp;
 
 ImageLoader::LinkContext tvm_linkContext = {};
 
-extern void tvm_make_default_context(ImageLoader::LinkContext &ctx);
-
+extern "C" void tvm_make_default_context(ImageLoader::LinkContext &ctx);
 
 extern "C" int tvm_dlclose(void * __handle) {
   ImageLoader* image = reinterpret_cast<ImageLoader*>(__handle);
@@ -19,12 +22,10 @@ extern "C" char * tvm_dlerror(void) {
   return "";
 }
 
-extern "C" void * tvm_dlopen(const char * __path, int __mode) {
+extern "C" void* tvm_dlopen(const char * __path, int __mode) {
   tvm_make_default_context(tvm_linkContext);
-
-  ImageLoader* image = nullptr;
   ImageLoader::LinkContext &linkContext = tvm_linkContext;
-  const char stub_name[] = "libstub.dylib"; // TODO: extract form path
+  const char stub_name[] = "no_name"; // TODO: extract form path
 
   std::fstream lib_f(__path, std::ios::in | std::ios::binary);
   if (!lib_f.is_open())
@@ -38,9 +39,8 @@ extern "C" void * tvm_dlopen(const char * __path, int __mode) {
   lib_f.read(buff.data(), fsize);
   lib_f.close();
 
-  macho_header* mh = reinterpret_cast<macho_header*>(buff.data());
-
-  image = ImageLoaderMachO::instantiateFromMemory(stub_name, mh, fsize, linkContext);
+  auto mh = reinterpret_cast<const macho_header*>(buff.data());
+  auto image = ImageLoaderMachO::instantiateFromMemory(stub_name, mh, fsize, linkContext);
 
   bool forceLazysBound = true;
   bool preflightOnly = false;
@@ -53,20 +53,15 @@ extern "C" void * tvm_dlopen(const char * __path, int __mode) {
   return image;
 }
 
-extern "C" void * tvm_dlsym(void * __handle, const char * __symbol) {
-  const ImageLoader* image = reinterpret_cast<ImageLoader*>(__handle);
-  const ImageLoader::Symbol* sym;
-  void* result;
-
-  ImageLoader* callerImage = nullptr;
-  ImageLoader::LinkContext linkContext = tvm_linkContext;
+extern "C" void* tvm_dlsym(void * __handle, const char * __symbol) {
   std::string underscoredName = "_" + std::string(__symbol);
+  const ImageLoader* image = reinterpret_cast<ImageLoader*>(__handle);
 
-  sym = image->findExportedSymbol(underscoredName.c_str(), true, &image);
+  auto sym = image->findExportedSymbol(underscoredName.c_str(), true, &image);
   if ( sym != NULL ) {
-    result = (void*)image->getExportedSymbolAddress(sym,
-                    linkContext, callerImage, false, underscoredName.c_str());
-    return result;
+    auto addr = image->getExportedSymbolAddress(sym,
+            tvm_linkContext, nullptr, false, underscoredName.c_str());
+    return reinterpret_cast<void*>(addr);
   }
   return nullptr;
 }

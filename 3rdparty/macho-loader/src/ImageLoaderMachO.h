@@ -43,6 +43,7 @@
 
 #define BIND_TYPE_THREADED_REBASE 102
 
+namespace tvm_exp {
 
 //
 // ImageLoaderMachO is a subclass of ImageLoader which loads mach-o format files.
@@ -68,7 +69,7 @@ public:
 	virtual const void*					getEnd() const;
 	virtual bool						hasCoalescedExports() const;
 	virtual const Symbol*				findExportedSymbol(const char* name, bool searchReExports, const char* thisPath, const ImageLoader** foundIn) const;
-	virtual uintptr_t					getExportedSymbolAddress(const Symbol* sym, const LinkContext& context, 
+	virtual uintptr_t					getExportedSymbolAddress(const Symbol* sym, const LinkContext& context,
 																const ImageLoader* requestor, bool runResolver, const char*) const;
 	virtual DefinitionFlags				getExportedSymbolInfo(const Symbol* sym) const;
 	virtual const char*					getExportedSymbolName(const Symbol* sym) const;
@@ -205,9 +206,9 @@ protected:
 	virtual bool		doInitialization(const LinkContext& context);
 	virtual void		doGetDOFSections(const LinkContext& context, std::vector<ImageLoader::DOFInfo>& dofs);
 	virtual bool		needsTermination();
-	virtual bool		segmentsMustSlideTogether() const;	
-	virtual bool		segmentsCanSlide() const;			
-	virtual void		setSlide(intptr_t slide);		
+	virtual bool		segmentsMustSlideTogether() const;
+	virtual bool		segmentsCanSlide() const;
+	virtual void		setSlide(intptr_t slide);
 	virtual bool		usesTwoLevelNameSpace() const;
 	virtual bool		isPrebindable() const;
 
@@ -238,7 +239,7 @@ protected:
 			void		mapSegments(int fd, uint64_t offsetInFat, uint64_t lenInFat, uint64_t fileLen, const LinkContext& context);
 			void		mapSegments(const void* memoryImage, uint64_t imageLen, const LinkContext& context);
 			void		UnmapSegments();
-			void		__attribute__((noreturn)) throwSymbolNotFound(const LinkContext& context, const char* symbol, 
+			void		__attribute__((noreturn)) throwSymbolNotFound(const LinkContext& context, const char* symbol,
 																	const char* referencedFrom, const char* fromVersMismatch,
 																	const char* expectedIn);
 			void		doImageInit(const LinkContext& context);
@@ -251,9 +252,9 @@ protected:
 
 			void		doInterpose(const LinkContext& context) = 0;
 			bool		hasReferencesToWeakSymbols() const;
-			uintptr_t	getSymbolAddress(const Symbol* sym, const ImageLoader* requestor, 
+			uintptr_t	getSymbolAddress(const Symbol* sym, const ImageLoader* requestor,
 										const LinkContext& context, bool runResolver) const;
-			
+
 	static uintptr_t			bindLazySymbol(const mach_header*, uintptr_t* lazyPointer);
 protected:
 	uint64_t								fCoveredCodeLength;
@@ -267,7 +268,7 @@ protected:
 											fIsSplitSeg : 1,
 											fInSharedCache : 1,
 #if TEXT_RELOC_SUPPORT
-											fTextSegmentRebases : 1, 
+											fTextSegmentRebases : 1,
 											fTextSegmentBinds : 1,
 #else
 											fReadOnlyDataSegment : 1,
@@ -287,10 +288,10 @@ protected:
 											fRegisteredAsRequiresCoalescing : 1, 	// <rdar://problem/7886402> Loading MH_DYLIB_STUB causing coalescable miscount
 											fOverrideOfCacheImageNum : 12;
 
-											
+
 	static uint32_t					fgSymbolTableBinarySearchs;
 };
-
+}
 
 #endif // __IMAGELOADERMACHO__
 

@@ -44,12 +44,14 @@
 #include "ImageLoaderMachOCompressed.h"
 #ifndef TVM_FOR
 #include "Closure.h"
-#endif
 #include "Array.h"
+#endif
 
 #ifndef BIND_SUBOPCODE_THREADED_SET_JOP
    #define BIND_SUBOPCODE_THREADED_SET_JOP								0x0F
 #endif
+
+namespace tvm_exp {
 
 // relocation_info.r_length field has value 3 for 64-bit executables and value 2 for 32-bit executables
 #if __LP64__
@@ -771,6 +773,7 @@ uintptr_t ImageLoaderMachOCompressed::resolveTwolevel(const LinkContext& context
 	uint32_t imageMinOS = this->minOSVersion();
 	// dyld is always built for the current OS, so we can get the current OS version
 	// from the load command in dyld itself.
+#ifndef TVM_FOR
 	extern const mach_header __dso_handle;
 	uint32_t dyldMinOS = ImageLoaderMachO::minOSVersion(&__dso_handle);
 	if ( imageMinOS > dyldMinOS ) {
@@ -782,6 +785,7 @@ uintptr_t ImageLoaderMachOCompressed::resolveTwolevel(const LinkContext& context
 		strcpy(versMismatch, msg);
 		::free((void*)msg);
 	}
+#endif
 	throwSymbolNotFound(context, symbolName, this->getPath(), versMismatch, definedInImage->getPath());
 }
 
@@ -2143,5 +2147,5 @@ void ImageLoaderMachOCompressed::registerEncryption(const encryption_info_comman
 #endif
 }
 
-
+}
 

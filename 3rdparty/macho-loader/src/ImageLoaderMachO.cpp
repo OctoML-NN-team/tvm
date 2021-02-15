@@ -70,6 +70,8 @@ extern "C" long __stack_chk_guard;
   #define DRIVERKIT_LIBDYLD_DYLIB_PATH 	  "/System/DriverKit/usr/lib/system/libdyld.dylib"
 #endif
 
+namespace tvm_exp {
+
 // relocation_info.r_length field has value 3 for 64-bit executables and value 2 for 32-bit executables
 #if __LP64__
 	#define LC_SEGMENT_COMMAND		LC_SEGMENT_64
@@ -2073,7 +2075,7 @@ struct DATAdyld {
 
 // These are defined in dyldStartup.s
 extern "C" void stub_binding_helper();
-extern "C" int _dyld_func_lookup(const char* name, void** address);
+extern "C" int _dyld_func_lookup__(const char* name, void** address);
 
 static const char* libDyldPath(const ImageLoader::LinkContext& context)
 {
@@ -2130,8 +2132,8 @@ void ImageLoaderMachO::setupLazyPointerHandler(const LinkContext& context)
 						#endif
 							}
 							if ( sect->size > offsetof(DATAdyld, dyldFuncLookup) ) {
-								if ( dd->dyldFuncLookup != (void*)&_dyld_func_lookup )
-									dd->dyldFuncLookup = (void*)&_dyld_func_lookup;
+								if ( dd->dyldFuncLookup != (void*)&_dyld_func_lookup__ )
+									dd->dyldFuncLookup = (void*)&_dyld_func_lookup__;
 							}
 							if ( mh->filetype == MH_EXECUTE ) {
 								// there are two ways to get the program variables
@@ -2548,7 +2550,7 @@ intptr_t ImageLoaderMachO::assignSegmentAddresses(const LinkContext& context, si
 				throw "failed to reserve space for aot";
 			}
 		}
-	} 
+	}
 	else if ( ! this->segmentsCanSlide() ) {
 		uintptr_t highAddr = 0;
 		for(unsigned int i=0, e=segmentCount(); i < e; ++i) {
@@ -2583,14 +2585,14 @@ uintptr_t ImageLoaderMachO::reserveAnAddressRange(size_t length, const ImageLoad
 		 // add small (0-3 pages) random padding between dylibs
 		addr = fgNextPIEDylibAddress + (__stack_chk_guard/fgNextPIEDylibAddress & (sizeof(long)-1))*dyld_page_size;
 		//dyld::log("padding 0x%08llX, guard=0x%08llX\n", (long long)(addr - fgNextPIEDylibAddress), (long long)(__stack_chk_guard));
-		kern_return_t r = vm_alloc(&addr, size, VM_FLAGS_FIXED | VM_MAKE_TAG(VM_MEMORY_DYLIB));
+		kern_return_t r = vm_alloc__(&addr, size, VM_FLAGS_FIXED | VM_MAKE_TAG(VM_MEMORY_DYLIB));
 		if ( r == KERN_SUCCESS ) {
 			fgNextPIEDylibAddress = addr + size;
 			return addr;
 		}
 		fgNextPIEDylibAddress = 0;
 	}
-	kern_return_t r = vm_alloc(&addr, size, VM_FLAGS_ANYWHERE | VM_MAKE_TAG(VM_MEMORY_DYLIB));
+	kern_return_t r = vm_alloc__(&addr, size, VM_FLAGS_ANYWHERE | VM_MAKE_TAG(VM_MEMORY_DYLIB));
 	if ( r != KERN_SUCCESS ) 
 		throw "out of address space";
 	
@@ -2601,7 +2603,7 @@ bool ImageLoaderMachO::reserveAddressRange(uintptr_t start, size_t length)
 {
 	vm_address_t addr = start;
 	vm_size_t size = length;
-	kern_return_t r = vm_alloc(&addr, size, VM_FLAGS_FIXED | VM_MAKE_TAG(VM_MEMORY_DYLIB));
+	kern_return_t r = vm_alloc__(&addr, size, VM_FLAGS_FIXED | VM_MAKE_TAG(VM_MEMORY_DYLIB));
 	if ( r != KERN_SUCCESS ) 
 		return false;
 	return true;
@@ -2683,7 +2685,7 @@ void ImageLoaderMachO::mapSegments(int fd, uint64_t offsetInFat, uint64_t lenInF
 				dyld::throwf("truncated mach-o error: segment %s extends to %llu which is past end of file %llu", 
 								segName(i), (uint64_t)(fileOffset+size), fileLen);
 			}
-			void* loadAddress = xmmap((void*)requestedLoadAddress, size, protection, MAP_FIXED | MAP_PRIVATE, fd, fileOffset);
+			void* loadAddress = xmmap__((void*)requestedLoadAddress, size, protection, MAP_FIXED | MAP_PRIVATE, fd, fileOffset);
 			if ( loadAddress == ((void*)(-1)) ) {
 				int mmapErr = errno;
 				if ( mmapErr == EPERM ) {
@@ -2741,7 +2743,7 @@ void ImageLoaderMachO::mapSegments(const void* memoryImage, uint64_t imageLen, c
 		vm_address_t srcAddr = (uintptr_t)memoryImage + segFileOffset(i);
 		vm_size_t size = segFileSize(i);
 		kern_return_t r = vm_copy(mach_task_self(), srcAddr, size, loadAddress);
-		if ( r != KERN_SUCCESS ) 
+		if ( r != KERN_SUCCESS )
 			throw "can't map segment";
 		if ( context.verboseMapping )
 			dyld::log("%18s at 0x%08lX->0x%08lX\n", segName(i), (uintptr_t)loadAddress, (uintptr_t)loadAddress+size-1);
@@ -3022,3 +3024,4 @@ uintptr_t ImageLoaderMachO::imageBaseAddress() const {
     return 0;
 }
 
+}

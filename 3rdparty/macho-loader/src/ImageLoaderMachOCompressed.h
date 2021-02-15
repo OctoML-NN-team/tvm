@@ -30,24 +30,25 @@
 #include "dyld2.h"
 #include "ImageLoaderMachO.h"
 
+namespace tvm_exp {
 
 //
-// ImageLoaderMachOCompressed is the concrete subclass of ImageLoader which loads mach-o files 
-// that use the compressed LINKEDIT format.  
+// ImageLoaderMachOCompressed is the concrete subclass of ImageLoader which loads mach-o files
+// that use the compressed LINKEDIT format.
 //
 class ImageLoaderMachOCompressed : public ImageLoaderMachO {
 public:
-	static ImageLoaderMachOCompressed*	instantiateMainExecutable(const macho_header* mh, uintptr_t slide, const char* path, 
+	static ImageLoaderMachOCompressed*	instantiateMainExecutable(const macho_header* mh, uintptr_t slide, const char* path,
 																	unsigned int segCount, unsigned int libCount, const LinkContext& context);
 	static ImageLoaderMachOCompressed*	instantiateFromFile(const char* path, int fd, const uint8_t *fileData, size_t lenFileData,
-															uint64_t offsetInFat, uint64_t lenInFat, const struct stat& info, 
-															unsigned int segCount, unsigned int libCount, 
-															const struct linkedit_data_command* codeSigCmd, 
+															uint64_t offsetInFat, uint64_t lenInFat, const struct stat& info,
+															unsigned int segCount, unsigned int libCount,
+															const struct linkedit_data_command* codeSigCmd,
 															const struct encryption_info_command* encryptCmd,
 															const LinkContext& context);
 	static ImageLoaderMachOCompressed*	instantiateFromCache(const macho_header* mh, const char* path, long slide, const struct stat& info,
 																unsigned int segCount, unsigned int libCount, const LinkContext& context);
-	static ImageLoaderMachOCompressed*	instantiateFromMemory(const char* moduleName, const macho_header* mh, uint64_t len, 
+	static ImageLoaderMachOCompressed*	instantiateFromMemory(const char* moduleName, const macho_header* mh, uint64_t len,
 															unsigned int segCount, unsigned int libCount, const LinkContext& context);
 
 
@@ -97,7 +98,7 @@ protected:
 	virtual uintptr_t					resolveWeak(const LinkContext& context, const char* symbolName, bool weak_import, bool runResolver,
 													const ImageLoader** foundIn);
 
-		
+
 private:
 	struct LastLookup { long ordinal; uint8_t flags; const char* name; uintptr_t result; const ImageLoader* foundIn; };
 
@@ -117,7 +118,7 @@ private:
 	void								instantiateFinish(const LinkContext& context);
 
 	void								rebaseAt(const LinkContext& context, uintptr_t addr, uintptr_t slide, uint8_t type);
-	void								throwBadRebaseAddress(uintptr_t address, uintptr_t segmentEndAddress, int segmentIndex, 
+	void								throwBadRebaseAddress(uintptr_t address, uintptr_t segmentEndAddress, int segmentIndex,
 												const uint8_t* startOpcodes, const uint8_t* endOpcodes, const uint8_t* pos);
 	static uintptr_t					bindAt(const LinkContext& context, ImageLoaderMachOCompressed* image, uintptr_t addr, uint8_t type, const char* symbolName,
                                                uint8_t symboFlags, intptr_t addend, long libraryOrdinal,
@@ -125,10 +126,10 @@ private:
                                                const char* msg,
 												LastLookup* last, bool runResolver=false);
 	void								bindCompressed(const LinkContext& context);
-	void								throwBadBindingAddress(uintptr_t address, uintptr_t segmentEndAddress, int segmentIndex, 
+	void								throwBadBindingAddress(uintptr_t address, uintptr_t segmentEndAddress, int segmentIndex,
 												const uint8_t* startOpcodes, const uint8_t* endOpcodes, const uint8_t* pos);
-	uintptr_t							resolve(const LinkContext& context, const char* symbolName, 
-												uint8_t symboFlags, long libraryOrdinal, const ImageLoader** targetImage, 
+	uintptr_t							resolve(const LinkContext& context, const char* symbolName,
+												uint8_t symboFlags, long libraryOrdinal, const ImageLoader** targetImage,
 												LastLookup* last = NULL, bool runResolver=false);
 	uintptr_t							resolveFlat(const LinkContext& context, const char* symbolName, bool weak_import, bool runResolver,
 													const ImageLoader** foundIn);
@@ -136,11 +137,11 @@ private:
 	uintptr_t							resolveTwolevel(const LinkContext& context, const char* symbolName, const ImageLoader* definedInImage,
 													  const ImageLoader* requestorImage, unsigned requestorOrdinalOfDef, bool weak_import, bool runResolver,
 													  const ImageLoader** foundInn);
-	static uintptr_t					interposeAt(const LinkContext& context, ImageLoaderMachOCompressed* image, uintptr_t addr, uint8_t type, const char*, 
+	static uintptr_t					interposeAt(const LinkContext& context, ImageLoaderMachOCompressed* image, uintptr_t addr, uint8_t type, const char*,
                                                     uint8_t, intptr_t, long,
                                                     ExtraBindData *extraBindData,
                                                     const char*, LastLookup*, bool runResolver);
-	static uintptr_t					dynamicInterposeAt(const LinkContext& context, ImageLoaderMachOCompressed* image, uintptr_t addr, uint8_t type, const char*, 
+	static uintptr_t					dynamicInterposeAt(const LinkContext& context, ImageLoaderMachOCompressed* image, uintptr_t addr, uint8_t type, const char*,
                                                            uint8_t, intptr_t, long,
                                                            ExtraBindData *extraBindData,
                                                            const char*, LastLookup*, bool runResolver);
@@ -154,7 +155,7 @@ private:
 	const struct linkedit_data_command*		fExportsTrie;
 };
 
-
+}
 
 #endif // __IMAGELOADER_MACHO_COMPRESSED__
 

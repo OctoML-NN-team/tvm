@@ -35,8 +35,6 @@
 #ifndef TVM_FOR
 #include <System/sys/kdebug.h>
 #include <System/sys/reason.h>
-#else
-#include "stub_kdebug.h"
 #endif
 
 
@@ -73,6 +71,7 @@
 
 #define VIS_HIDDEN __attribute__((visibility("hidden")))
 
+namespace tvm_exp {
 namespace dyld3 {
 
 enum class DyldTimingBuildClosure : uint64_t {
@@ -168,5 +167,6 @@ void kdebug_trace_dyld_duration_end(uint64_t trace_id, uint32_t code, kt_arg dat
 VIS_HIDDEN
 void syntheticBacktrace(const char *reason, bool enableExternally=false);
 
-};
+}
+}
 #endif /* Tracing_h */

@@ -55,8 +55,8 @@
 #endif
 #ifndef TVM_FOR
 #include "DyldSharedCache.h"
-#endif
 #include "Map.h"
+#endif
 #include "dyld2.h"
 
 #if __arm__
@@ -124,6 +124,8 @@
                __vector_base<type, std::allocator<type> >::~__vector_base() { } \
        }
 
+namespace tvm_exp {
+
 // utilities
 namespace dyld {
 	extern __attribute__((noreturn)) void throwf(const char* format, ...)  __attribute__((format(printf, 1, 2)));
@@ -134,8 +136,8 @@ namespace dyld {
 	extern void logBindings(const char* format, ...)  __attribute__((format(printf, 1, 2)));
 #endif
 }
-extern "C" 	int   vm_alloc(vm_address_t* addr, vm_size_t size, uint32_t flags);
-extern "C" 	void* xmmap(void* addr, size_t len, int prot, int flags, int fd, off_t offset);
+extern "C" 	int   vm_alloc__(vm_address_t* addr, vm_size_t size, uint32_t flags);
+extern "C" 	void* xmmap__(void* addr, size_t len, int prot, int flags, int fd, off_t offset);
 
 
 #if __LP64__
@@ -918,8 +920,9 @@ private:
 
 };
 
+}
 
-VECTOR_NEVER_DESTRUCTED_EXTERN(ImageLoader::InterposeTuple);
+VECTOR_NEVER_DESTRUCTED_EXTERN(tvm_exp::ImageLoader::InterposeTuple);
 
 
 #endif
