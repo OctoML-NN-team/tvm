@@ -32,14 +32,14 @@
 #include <windows.h>
 #elif defined(__APPLE__)
   #include <TargetConditionals.h>
-  #if defined(TARGET_OS_IPHONE)
+  #include <dlfcn.h>
+  #if TARGET_OS_IPHONE == 1
     #include <tvm_dlfcn.h>
     #define dlopen  tvm_dlopen
     #define dlerror tvm_dlerror
     #define dlclose tvm_dlclose
     #define dlsym   tvm_dlsym
   #endif
-  #include <dlfcn.h>
 #else
 #include <dlfcn.h>
 #endif
