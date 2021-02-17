@@ -77,6 +77,9 @@ under the License.
           </compilerStartOptions>
           <compilerEndOptions>
             <compilerEndOption>-I../../../include</compilerEndOption>
+            <compilerEndOption>-I..</compilerEndOption>
+            <compilerEndOption>-I/Library/Java/JavaVirtualMachines/jdk-15.0.2.jdk/Contents/Home/include/</compilerEndOption>
+            <compilerEndOption>-I/Library/Java/JavaVirtualMachines/jdk-15.0.2.jdk/Contents/Home/include/darwin</compilerEndOption>
             <compilerEndOption>${cflags}</compilerEndOption>
           </compilerEndOptions>
           <linkerStartOptions>
@@ -93,7 +96,7 @@ under the License.
           </linkerEndOptions>
         </configuration>
 
-        <executions>
+<!--         <executions>
           <execution>
             <id>javah</id>
             <phase>generate-sources</phase>
@@ -112,7 +115,7 @@ under the License.
             </goals>
           </execution>
         </executions>
-      </plugin>
+ -->      </plugin>
     </plugins>
   </build>
 </project>

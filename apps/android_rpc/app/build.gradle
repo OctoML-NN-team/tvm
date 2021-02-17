@@ -26,8 +26,11 @@ tasks.withType(JavaCompile) {
 }
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion "26.0.1"
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
+    lintOptions {
+        abortOnError false
+    }
     defaultConfig {
         applicationId "org.apache.tvm.tvmrpc"
         minSdkVersion 24
