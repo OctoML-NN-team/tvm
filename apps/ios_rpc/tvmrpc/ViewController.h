@@ -33,6 +33,7 @@
   std::string recvBuffer_;
   // Whether connection is initialized.
   bool initialized_;
+  bool initialized1_;
   // Whether application is registered in rpc_tracker.
   bool registered_;
   bool registering_;
