@@ -68,7 +68,7 @@ def codesign(lib):
         raise RuntimeError(msg)
 
 
-def create_dylib(output, objects, arch, sdk="macosx"):
+def create_dylib(output, objects, arch="arm64", sdk="iphoneos"):
     """Create dynamic library.
 
     Parameters
