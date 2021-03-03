@@ -281,6 +281,11 @@ typedef dmlc::ThreadLocalStore<MetalThreadEntry> MetalThreadStore;
 
 MetalThreadEntry* MetalThreadEntry::ThreadLocal() { return MetalThreadStore::Get(); }
 
+TVM_REGISTER_GLOBAL("device_api.gpu").set_body([](TVMArgs args, TVMRetValue* rv) {
+  DeviceAPI* ptr = MetalWorkspace::Global();
+  *rv = static_cast<void*>(ptr);
+});
+
 TVM_REGISTER_GLOBAL("device_api.metal").set_body([](TVMArgs args, TVMRetValue* rv) {
   DeviceAPI* ptr = MetalWorkspace::Global();
   *rv = static_cast<void*>(ptr);
