@@ -227,6 +227,8 @@ class TrackerClient {
     return prefix + std::to_string(Random());
   }
 
+  bool is_stopped_;
+  
   std::string tracker_addr_;
   std::string key_;
   std::string custom_addr_;

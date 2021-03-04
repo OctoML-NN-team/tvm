@@ -17,31 +17,4 @@
  * under the License.
  */
 
-/*!
- * \file ViewController.h
- */
-
-#import <UIKit/UIKit.h>
-#include "TVMRuntime.h"
-#include "rpc_server.h"
-#include <memory>
-
-@interface ViewController : UIViewController <NSStreamDelegate> {
-  std::string key_;
-  std::string matchKey_;
-  std::string url_;
-  int port_;
-
-  std::shared_ptr<tvm::runtime::RPCServer> rpc_;
-}
-
-@property(weak, nonatomic) IBOutlet UITextField* proxyURL;
-@property(weak, nonatomic) IBOutlet UITextField* proxyPort;
-@property(weak, nonatomic) IBOutlet UITextField* proxyKey;
-@property(weak, nonatomic) IBOutlet UILabel* statusLabel;
-@property(weak, nonatomic) IBOutlet UITextView* infoText;
-
-- (IBAction)connect:(id)sender;
-- (IBAction)disconnect:(id)sender;
-
-@end
+#include "socket_sender.hpp"

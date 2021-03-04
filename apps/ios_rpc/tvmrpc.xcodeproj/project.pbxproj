@@ -1,23 +1,4 @@
 // !$*UTF8*$!
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
 {
 	archiveVersion = 1;
 	classes = {
@@ -26,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		01146E5F25F121AF00DFA012 /* socket_sender.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 01146E5D25F121AF00DFA012 /* socket_sender.cpp */; };
 		015C84EF25D2B704008E693D /* libtvm_runtime.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 015C84EE25D2B704008E693D /* libtvm_runtime.dylib */; };
 		015C84F825D2BB2D008E693D /* libtvm_runtime.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 015C84EE25D2B704008E693D /* libtvm_runtime.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		0198847525DE876300FA4E4F /* rpc_server.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0198847225DE876300FA4E4F /* rpc_server.cc */; };
 		C02637501F1C25E8007247A9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C026374F1F1C25E8007247A9 /* main.m */; };
 		C02637531F1C25E8007247A9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = C02637521F1C25E8007247A9 /* AppDelegate.m */; };
 		C02637591F1C25E8007247A9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C02637571F1C25E8007247A9 /* Main.storyboard */; };
@@ -65,8 +46,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		01146E5D25F121AF00DFA012 /* socket_sender.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = socket_sender.cpp; sourceTree = "<group>"; };
+		01146E5E25F121AF00DFA012 /* socket_sender.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = socket_sender.hpp; sourceTree = "<group>"; };
 		015C84EE25D2B704008E693D /* libtvm_runtime.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtvm_runtime.dylib; path = "../../../cmake-build-debug-ios/libtvm_runtime.dylib"; sourceTree = "<group>"; };
-		0198847225DE876300FA4E4F /* rpc_server.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = rpc_server.cc; sourceTree = "<group>"; };
 		0198847325DE876300FA4E4F /* rpc_tracker_client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_tracker_client.h; sourceTree = "<group>"; };
 		0198847425DE876300FA4E4F /* rpc_server.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_server.h; sourceTree = "<group>"; };
 		C026374B1F1C25E8007247A9 /* tvmrpc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tvmrpc.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -131,7 +113,8 @@
 		C026374D1F1C25E8007247A9 /* tvmrpc */ = {
 			isa = PBXGroup;
 			children = (
-				0198847225DE876300FA4E4F /* rpc_server.cc */,
+				01146E5D25F121AF00DFA012 /* socket_sender.cpp */,
+				01146E5E25F121AF00DFA012 /* socket_sender.hpp */,
 				0198847425DE876300FA4E4F /* rpc_server.h */,
 				0198847325DE876300FA4E4F /* rpc_tracker_client.h */,
 				015C84EE25D2B704008E693D /* libtvm_runtime.dylib */,
@@ -226,12 +209,12 @@
 				TargetAttributes = {
 					C026374A1F1C25E8007247A9 = {
 						CreatedOnToolsVersion = 8.3.3;
-						DevelopmentTeam = 3FR42MXLK9;
+						DevelopmentTeam = KCTR727X9S;
 						ProvisioningStyle = Automatic;
 					};
 					C05A2C851F1DCE0900D4798B = {
 						CreatedOnToolsVersion = 8.3.3;
-						DevelopmentTeam = 3FR42MXLK9;
+						DevelopmentTeam = KCTR727X9S;
 						ProvisioningStyle = Automatic;
 						TestTargetID = C026374A1F1C25E8007247A9;
 					};
@@ -242,6 +225,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 				Base,
 			);
@@ -298,10 +282,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				C02637691F1C26AF007247A9 /* ViewController.mm in Sources */,
+				01146E5F25F121AF00DFA012 /* socket_sender.cpp in Sources */,
 				C02637531F1C25E8007247A9 /* AppDelegate.m in Sources */,
 				C02637661F1C2690007247A9 /* TVMRuntime.mm in Sources */,
 				C02637501F1C25E8007247A9 /* main.m in Sources */,
-				0198847525DE876300FA4E4F /* rpc_server.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -442,7 +426,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
-				DEVELOPMENT_TEAM = 3FR42MXLK9;
+				DEVELOPMENT_TEAM = KCTR727X9S;
 				ENABLE_BITCODE = NO;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
@@ -454,7 +438,7 @@
 				INFOPLIST_FILE = tvmrpc/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "../../cmake-build-debug-ios";
-				PRODUCT_BUNDLE_IDENTIFIER = "org.apache.tvmrpc";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.apache.tvmrpc-home1";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -466,7 +450,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
-				DEVELOPMENT_TEAM = 3FR42MXLK9;
+				DEVELOPMENT_TEAM = KCTR727X9S;
 				ENABLE_BITCODE = NO;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
@@ -478,7 +462,7 @@
 				INFOPLIST_FILE = tvmrpc/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "../../cmake-build-debug-ios";
-				PRODUCT_BUNDLE_IDENTIFIER = "org.apache.tvmrpc";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.apache.tvmrpc-home1";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -487,7 +471,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				DEVELOPMENT_TEAM = 3FR42MXLK9;
+				DEVELOPMENT_TEAM = KCTR727X9S;
 				HEADER_SEARCH_PATHS = (
 					../../3rdparty/dlpack/include,
 					../../include,
@@ -505,7 +489,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				DEVELOPMENT_TEAM = 3FR42MXLK9;
+				DEVELOPMENT_TEAM = KCTR727X9S;
 				HEADER_SEARCH_PATHS = (
 					../../3rdparty/dlpack/include,
 					../../include,

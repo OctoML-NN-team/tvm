@@ -18,30 +18,19 @@
  */
 
 /*!
- * \file ViewController.h
+ * \file
+ * \brief TCP socket  sender wrapper.
  */
+#ifndef TVM_APPS_IOS_SOCKET_SENDER_H_
+#define TVM_APPS_IOS_SOCKET_SENDER_H_
 
-#import <UIKit/UIKit.h>
-#include "TVMRuntime.h"
-#include "rpc_server.h"
-#include <memory>
+namespace tvm {
+namespace runtime {
 
-@interface ViewController : UIViewController <NSStreamDelegate> {
-  std::string key_;
-  std::string matchKey_;
-  std::string url_;
-  int port_;
+class SocketSender {
+  SocketSender() {};
+};
 
-  std::shared_ptr<tvm::runtime::RPCServer> rpc_;
-}
-
-@property(weak, nonatomic) IBOutlet UITextField* proxyURL;
-@property(weak, nonatomic) IBOutlet UITextField* proxyPort;
-@property(weak, nonatomic) IBOutlet UITextField* proxyKey;
-@property(weak, nonatomic) IBOutlet UILabel* statusLabel;
-@property(weak, nonatomic) IBOutlet UITextView* infoText;
-
-- (IBAction)connect:(id)sender;
-- (IBAction)disconnect:(id)sender;
-
-@end
+}  // namespace runtime
+}  // namespace tvm
+#endif  // TVM_APPS_IOS_SOCKET_SENDER_H_
