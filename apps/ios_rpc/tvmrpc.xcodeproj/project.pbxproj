@@ -8,8 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		01146E5F25F121AF00DFA012 /* socket_sender.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 01146E5D25F121AF00DFA012 /* socket_sender.cpp */; };
+		015A5FDA25FA81F500F9C733 /* rpc_bench.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 015A5FD925FA81F500F9C733 /* rpc_bench.cpp */; };
 		015C84EF25D2B704008E693D /* libtvm_runtime.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 015C84EE25D2B704008E693D /* libtvm_runtime.dylib */; };
 		015C84F825D2BB2D008E693D /* libtvm_runtime.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 015C84EE25D2B704008E693D /* libtvm_runtime.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		01B4EB1225F7B32C001A4915 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01B4EB1125F7B32C001A4915 /* Accelerate.framework */; };
 		C02637501F1C25E8007247A9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C026374F1F1C25E8007247A9 /* main.m */; };
 		C02637531F1C25E8007247A9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = C02637521F1C25E8007247A9 /* AppDelegate.m */; };
 		C02637591F1C25E8007247A9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C02637571F1C25E8007247A9 /* Main.storyboard */; };
@@ -48,9 +50,12 @@
 /* Begin PBXFileReference section */
 		01146E5D25F121AF00DFA012 /* socket_sender.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = socket_sender.cpp; sourceTree = "<group>"; };
 		01146E5E25F121AF00DFA012 /* socket_sender.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = socket_sender.hpp; sourceTree = "<group>"; };
+		015A5FD925FA81F500F9C733 /* rpc_bench.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = rpc_bench.cpp; sourceTree = "<group>"; };
 		015C84EE25D2B704008E693D /* libtvm_runtime.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtvm_runtime.dylib; path = "../../../cmake-build-debug-ios/libtvm_runtime.dylib"; sourceTree = "<group>"; };
 		0198847325DE876300FA4E4F /* rpc_tracker_client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_tracker_client.h; sourceTree = "<group>"; };
 		0198847425DE876300FA4E4F /* rpc_server.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_server.h; sourceTree = "<group>"; };
+		01B4EB0F25F7B0C7001A4915 /* rpc_bench.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = rpc_bench.h; sourceTree = "<group>"; };
+		01B4EB1125F7B32C001A4915 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		C026374B1F1C25E8007247A9 /* tvmrpc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tvmrpc.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C026374F1F1C25E8007247A9 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		C02637511F1C25E8007247A9 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -74,6 +79,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				01B4EB1225F7B32C001A4915 /* Accelerate.framework in Frameworks */,
 				D7685AD324390EAE00D1469C /* CoreML.framework in Frameworks */,
 				015C84EF25D2B704008E693D /* libtvm_runtime.dylib in Frameworks */,
 			);
@@ -115,6 +121,8 @@
 			children = (
 				01146E5D25F121AF00DFA012 /* socket_sender.cpp */,
 				01146E5E25F121AF00DFA012 /* socket_sender.hpp */,
+				01B4EB0F25F7B0C7001A4915 /* rpc_bench.h */,
+				015A5FD925FA81F500F9C733 /* rpc_bench.cpp */,
 				0198847425DE876300FA4E4F /* rpc_server.h */,
 				0198847325DE876300FA4E4F /* rpc_tracker_client.h */,
 				015C84EE25D2B704008E693D /* libtvm_runtime.dylib */,
@@ -153,6 +161,7 @@
 		D7685AD124390EAD00D1469C /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				01B4EB1125F7B32C001A4915 /* Accelerate.framework */,
 				D7685AD224390EAD00D1469C /* CoreML.framework */,
 			);
 			name = Frameworks;
@@ -281,6 +290,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				015A5FDA25FA81F500F9C733 /* rpc_bench.cpp in Sources */,
 				C02637691F1C26AF007247A9 /* ViewController.mm in Sources */,
 				01146E5F25F121AF00DFA012 /* socket_sender.cpp in Sources */,
 				C02637531F1C25E8007247A9 /* AppDelegate.m in Sources */,
@@ -438,7 +448,7 @@
 				INFOPLIST_FILE = tvmrpc/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "../../cmake-build-debug-ios";
-				PRODUCT_BUNDLE_IDENTIFIER = "org.apache.tvmrpc-home1";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.apache.tvmrpc-home";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -462,7 +472,7 @@
 				INFOPLIST_FILE = tvmrpc/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "../../cmake-build-debug-ios";
-				PRODUCT_BUNDLE_IDENTIFIER = "org.apache.tvmrpc-home1";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.apache.tvmrpc-home";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

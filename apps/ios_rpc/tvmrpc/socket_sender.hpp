@@ -24,11 +24,16 @@
 #ifndef TVM_APPS_IOS_SOCKET_SENDER_H_
 #define TVM_APPS_IOS_SOCKET_SENDER_H_
 
+#include "support/socket.h"
+
 namespace tvm {
 namespace runtime {
 
-class SocketSender {
-  SocketSender() {};
+class SocketSenderStream {
+  SocketSenderStream(support::TCPSocket sock) {};
+  
+  
+  
 };
 
 }  // namespace runtime

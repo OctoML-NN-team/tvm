@@ -110,7 +110,6 @@ class RPCServer {
         continue;
       }
 
-      int timeout = GetTimeOutFromOpts(opts);
       // step 3: serving
       ServerLoopProc(conn, addr);
       // close from our side.
