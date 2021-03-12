@@ -74,7 +74,7 @@ class TCPHandler(object):
         self._update_write()
 
     def _event_handler(self, events):
-        """centeral event handler"""
+        """central event handler"""
         if (events & self._ioloop.ERROR) or (events & self._ioloop.READ):
             if self._update_read() and (events & self._ioloop.WRITE):
                 self._update_write()

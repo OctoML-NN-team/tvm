@@ -16,7 +16,7 @@
 # under the License.
 """RPC Tracker, tracks and distributes the TVM RPC resources.
 
-This folder implemements the tracker server logic.
+This folder implements the tracker server logic.
 
 Note
 ----
@@ -152,7 +152,7 @@ class PriorityScheduler(Scheduler):
 
 
 class TCPEventHandler(tornado_util.TCPHandler):
-    """Base asynchronize message handler.
+    """Base asynchronous message handler.
 
     The tracker and client follows a simple message protocol.
     The message is in form [nbytes(int32)] [json-str].
@@ -181,7 +181,7 @@ class TCPEventHandler(tornado_util.TCPHandler):
         return self._info
 
     def _init_conn(self, message):
-        """Initialie the connection"""
+        """Initialize the connection"""
         if len(message) != 4:
             logger.warning("Invalid connection from %s", self.name())
             self.close()
@@ -367,7 +367,7 @@ def _tracker_server(listen_sock, stop_key):
 
 
 class Tracker(object):
-    """Start RPC tracker on a seperate process.
+    """Start RPC tracker on a separate process.
 
     Python implementation based on multi-processing.
 

@@ -112,9 +112,9 @@ class SearchPolicy(Object):
         Returns
         -------
         inputs: List[MeasureInput]
-            The inputs of measurments in this search round
+            The inputs of measurements in this search round
         results: List[MeasureResult]
-            The results of measurments in this search round
+            The results of measurements in this search round
         """
         return _ffi_api.SearchPolicyContinueSearchOneRound(self, num_measure, measurer)
 
