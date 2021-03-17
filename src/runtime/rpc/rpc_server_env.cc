@@ -24,9 +24,12 @@
 #include <tvm/runtime/registry.h>
 
 #include "../file_utils.h"
+#include "rpc_trace.h"
 
 namespace tvm {
 namespace runtime {
+
+static trace_dmn _dmn = trace_domain_create("tvm.runtime.rpc", "Binary handler");
 
 std::string RPCGetPath(const std::string& name) {
   // do live lookup everytime as workpath can change.
@@ -36,12 +39,14 @@ std::string RPCGetPath(const std::string& name) {
 }
 
 TVM_REGISTER_GLOBAL("tvm.rpc.server.upload").set_body([](TVMArgs args, TVMRetValue* rv) {
+  TRACE_REGION(_dmn, "bin_upload");
   std::string file_name = RPCGetPath(args[0]);
   std::string data = args[1];
   SaveBinaryToFile(file_name, data);
 });
 
 TVM_REGISTER_GLOBAL("tvm.rpc.server.download").set_body([](TVMArgs args, TVMRetValue* rv) {
+  TRACE_REGION(_dmn, "bin_download");
   std::string file_name = RPCGetPath(args[0]);
   std::string data;
   LoadBinaryFromFile(file_name, &data);
@@ -53,6 +58,7 @@ TVM_REGISTER_GLOBAL("tvm.rpc.server.download").set_body([](TVMArgs args, TVMRetV
 });
 
 TVM_REGISTER_GLOBAL("tvm.rpc.server.remove").set_body([](TVMArgs args, TVMRetValue* rv) {
+  TRACE_REGION(_dmn, "bin_remove");
   std::string file_name = RPCGetPath(args[0]);
   RemoveFile(file_name);
 });

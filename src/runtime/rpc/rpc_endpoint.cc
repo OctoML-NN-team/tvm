@@ -42,10 +42,13 @@
 #include "../../support/ring_buffer.h"
 #include "../object_internal.h"
 #include "rpc_local_session.h"
+#include "rpc_trace.h"
 
 namespace tvm {
 namespace runtime {
 
+static trace_dmn _dmn_con = trace_domain_create("tvm.runtime.rpc", "Socket handler");
+static trace_dmn _dmn_act = trace_domain_create("tvm.runtime.rpc", "Action handler");
 /*!
  * Event-driven state-machine based handlers for RPCEndpoint.
  *
@@ -110,6 +113,7 @@ class RPCEndpoint::EventHandler : public dmlc::Stream {
    */
   RPCCode HandleNextEvent(bool client_mode, bool async_server_mode,
                           RPCSession::FEncodeReturn setreturn) {
+    TRACE_FUNC(_dmn_con);
     std::swap(client_mode_, client_mode);
     std::swap(async_server_mode_, async_server_mode);
 
@@ -121,6 +125,7 @@ class RPCEndpoint::EventHandler : public dmlc::Stream {
           HandleInitHeader();
           break;
         case kRecvPacketNumBytes: {
+          TRACE_REGION(_dmn_con, "RecvPacketNumBytes");
           uint64_t packet_nbytes;
           ICHECK(this->Read(&packet_nbytes));
           if (packet_nbytes != 0) {
@@ -272,6 +277,7 @@ class RPCEndpoint::EventHandler : public dmlc::Stream {
 
   // handler for initial header read
   void HandleInitHeader() {
+    TRACE_FUNC(_dmn_con);
     if (init_header_step_ == 0) {
       int32_t len;
       this->Read(&len);
@@ -288,6 +294,7 @@ class RPCEndpoint::EventHandler : public dmlc::Stream {
 
   // Handler for read code.
   void HandleProcessPacket(RPCSession::FEncodeReturn setreturn) {
+    TRACE_FUNC(_dmn_con);
     RPCCode code = RPCCode::kNone;
     this->Read(&code);
 
@@ -387,6 +394,7 @@ class RPCEndpoint::EventHandler : public dmlc::Stream {
   void HandleSyscall(RPCCode code);
 
   void HandleCopyFromRemote() {
+    TRACE_FUNC(_dmn_act);
     DLTensor* arr = RPCReference::ReceiveDLTensor(this);
     uint64_t data_bytes;
     this->Read(&data_bytes);
@@ -430,6 +438,7 @@ class RPCEndpoint::EventHandler : public dmlc::Stream {
   }
 
   void HandleCopyToRemote() {
+    TRACE_FUNC(_dmn_act);
     DLTensor* arr = RPCReference::ReceiveDLTensor(this);
     uint64_t data_bytes;
     this->Read(&data_bytes);
@@ -472,6 +481,7 @@ class RPCEndpoint::EventHandler : public dmlc::Stream {
 
   // Handle for packed call.
   void HandleNormalCallFunc() {
+    TRACE_FUNC(_dmn_act);
     uint64_t call_handle;
 
     this->Read(&call_handle);
@@ -491,6 +501,7 @@ class RPCEndpoint::EventHandler : public dmlc::Stream {
   }
 
   void HandleInitServer() {
+    TRACE_FUNC(_dmn_act);
     std::string client_protocol_ver;
 
     uint64_t len;
@@ -548,6 +559,7 @@ class RPCEndpoint::EventHandler : public dmlc::Stream {
   }
 
   void HandleSyscallStreamSync() {
+    TRACE_FUNC(_dmn_act);
     TVMArgs args = RecvPackedSeq();
     try {
       TVMContext ctx = args[0];
@@ -571,6 +583,7 @@ class RPCEndpoint::EventHandler : public dmlc::Stream {
   // Handler for special syscalls that have a specific RPCCode.
   template <typename F>
   void SysCallHandler(F f) {
+    TRACE_FUNC(_dmn_act);
     TVMArgs args = RecvPackedSeq();
     try {
       TVMRetValue rv;
@@ -623,6 +636,7 @@ class RPCEndpoint::EventHandler : public dmlc::Stream {
 };
 
 RPCCode RPCEndpoint::HandleUntilReturnEvent(bool client_mode, RPCSession::FEncodeReturn setreturn) {
+  TRACE_FUNC(_dmn_con);
   RPCCode code = RPCCode::kCallFunc;
   while (code != RPCCode::kReturn && code != RPCCode::kShutdown && code != RPCCode::kCopyAck) {
     while (writer_.bytes_available() != 0) {
@@ -638,7 +652,7 @@ RPCCode RPCEndpoint::HandleUntilReturnEvent(bool client_mode, RPCSession::FEncod
         if (handler_->CanCleanShutdown()) {
           return RPCCode::kShutdown;
         } else {
-          LOG(FATAL) << "Channel closes before we get neded bytes";
+          LOG(FATAL) << "Channel closes before we get needed bytes";
         }
       }
     }

@@ -28,6 +28,10 @@
 #include <algorithm>
 
 #include "mt_random_engine.cc"
+#include "../../rpc/rpc_trace.h"
+
+static tvm::runtime::trace_dmn _dmn_rnd = tvm::runtime::trace_domain_create("tvm.runtime.rpc",
+                                                                            "random filler");
 
 #define DLPACK_INTEGER_TYPE_SWITCH(type, DType, ...)    \
   if (type.code == kDLInt && type.bits == 32) {         \
@@ -69,6 +73,7 @@ RandomThreadLocalEntry* RandomThreadLocalEntry::ThreadLocal() {
 }
 
 TVM_REGISTER_GLOBAL("tvm.contrib.random.randint").set_body([](TVMArgs args, TVMRetValue* ret) {
+  TRACE_REGION(_dmn_rnd, "randint");
   RandomThreadLocalEntry* entry = RandomThreadLocalEntry::ThreadLocal();
   int64_t low = args[0];
   int64_t high = args[1];
@@ -102,6 +107,7 @@ TVM_REGISTER_GLOBAL("tvm.contrib.random.randint").set_body([](TVMArgs args, TVMR
 });
 
 TVM_REGISTER_GLOBAL("tvm.contrib.random.uniform").set_body([](TVMArgs args, TVMRetValue* ret) {
+  TRACE_REGION(_dmn_rnd, "uniform");
   RandomThreadLocalEntry* entry = RandomThreadLocalEntry::ThreadLocal();
   double low = args[0];
   double high = args[1];
@@ -110,6 +116,7 @@ TVM_REGISTER_GLOBAL("tvm.contrib.random.uniform").set_body([](TVMArgs args, TVMR
 });
 
 TVM_REGISTER_GLOBAL("tvm.contrib.random.normal").set_body([](TVMArgs args, TVMRetValue* ret) {
+  TRACE_REGION(_dmn_rnd, "normal");
   RandomThreadLocalEntry* entry = RandomThreadLocalEntry::ThreadLocal();
   double loc = args[0];
   double scale = args[1];
@@ -118,6 +125,7 @@ TVM_REGISTER_GLOBAL("tvm.contrib.random.normal").set_body([](TVMArgs args, TVMRe
 });
 
 TVM_REGISTER_GLOBAL("tvm.contrib.random.random_fill").set_body([](TVMArgs args, TVMRetValue* ret) {
+  TRACE_REGION(_dmn_rnd, "random_fill");
   RandomThreadLocalEntry* entry = RandomThreadLocalEntry::ThreadLocal();
   DLTensor* out = args[0];
   entry->random_engine.RandomFill(out);
