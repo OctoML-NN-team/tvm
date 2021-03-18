@@ -99,21 +99,18 @@ kernel void CopyKernel(
 int GetWarpSize(id<MTLDevice> dev) {
   NSError* error_msg = nil;
   int size = 0;
-  @autoreleasepool {
-    id<MTLLibrary> lib = [dev newLibraryWithSource:[NSString stringWithUTF8String:kDummyKernel]
-                                           options:nil
-                                             error:&error_msg];
-    ICHECK(lib != nil) << [[error_msg localizedDescription] UTF8String];
-    id<MTLFunction> f = [lib newFunctionWithName:[NSString stringWithUTF8String:"CopyKernel"]];
-    ICHECK(f != nil);
-    id<MTLComputePipelineState> state = [dev newComputePipelineStateWithFunction:f
-                                                                           error:&error_msg];
-    ICHECK(state != nil) << [[error_msg localizedDescription] UTF8String];
-    size = static_cast<int>(state.threadExecutionWidth);
-    [state release];
-    [f release];
-    [lib release];
-  }
+  id<MTLLibrary> lib = [dev newLibraryWithSource:[NSString stringWithUTF8String:kDummyKernel]
+                                         options:nil
+                                           error:&error_msg];
+  ICHECK(lib != nil) << [[error_msg localizedDescription] UTF8String];
+  id<MTLFunction> f = [lib newFunctionWithName:[NSString stringWithUTF8String:"CopyKernel"]];
+  ICHECK(f != nil);
+  id<MTLComputePipelineState> state = [dev newComputePipelineStateWithFunction:f error:&error_msg];
+  ICHECK(state != nil) << [[error_msg localizedDescription] UTF8String];
+  size = static_cast<int>(state.threadExecutionWidth);
+  [state release];
+  [f release];
+  [lib release];
   return size;
 }
 
@@ -135,14 +132,14 @@ void MetalWorkspace::Init() {
 #if TARGET_OS_IPHONE
   // on iPhone
   id<MTLDevice> d = MTLCreateSystemDefaultDevice();
-  devices.push_back([d retain]);
-  queues.push_back([[d newCommandQueue] retain]);
+  devices.push_back(d);
+  queues.push_back([d newCommandQueue]);
 #else
   NSArray<id<MTLDevice> >* devs = MTLCopyAllDevices();
   for (size_t i = 0; i < devs.count; ++i) {
     id<MTLDevice> d = [devs objectAtIndex:i];
-    devices.push_back([d retain]);
-    queues.push_back([[d newCommandQueue] retain]);
+    devices.push_back(d);
+    queues.push_back([d newCommandQueue]);
     LOG(INFO) << "Intializing Metal device " << i << ", name=" << [d.name UTF8String];
     warp_size.push_back(GetWarpSize(d));
   }
@@ -168,7 +165,7 @@ void* MetalWorkspace::AllocDataSpace(TVMContext ctx, size_t nbytes, size_t align
   */
   id<MTLBuffer> buf = [dev newBufferWithLength:nbytes options:storage_mode];
   ICHECK(buf != nil);
-  return (void*)(CFBridgingRetain(buf));
+  return (void*)(buf);
 }
 
 void MetalWorkspace::FreeDataSpace(TVMContext ctx, void* ptr) {
@@ -283,8 +280,7 @@ id<MTLBuffer> MetalThreadEntry::GetTempBuffer(TVMContext ctx, size_t size) {
     if (temp_buffer_[ctx.device_id] != nil) {
       [temp_buffer_[ctx.device_id] release];
     }
-    temp_buffer_[ctx.device_id] = [[dev newBufferWithLength:size
-                                                    options:MTLStorageModeShared] retain];
+    temp_buffer_[ctx.device_id] = [dev newBufferWithLength:size options:MTLStorageModeShared];
   }
   return temp_buffer_[ctx.device_id];
 }

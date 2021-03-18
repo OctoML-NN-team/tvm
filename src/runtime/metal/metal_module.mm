@@ -116,11 +116,11 @@ class MetalModuleNode final : public runtime::ModuleNode {
                        << [[err_msg localizedDescription] UTF8String];
           }
         }
-        [e.lib retain];
       }
       id<MTLFunction> f =
           [e.lib newFunctionWithName:[NSString stringWithUTF8String:func_name.c_str()]];
       ICHECK(f != nil) << "cannot find function " << func_name;
+      std::cout << "before newComputePipelineStateWithFunction, func: " << func_name << std::endl;
       id<MTLComputePipelineState> state =
           [w->devices[device_id] newComputePipelineStateWithFunction:f error:&err_msg];
       ICHECK(state != nil) << "cannot get state:"
@@ -132,7 +132,7 @@ class MetalModuleNode final : public runtime::ModuleNode {
       // Turn of warp aware optimziation for now.
       // ICHECK_EQ(state.threadExecutionWidth, w->warp_size[device_id]);
       if (e.smap[func_name] != nil) [e.smap[func_name] release];
-      e.smap[func_name] = [state retain];
+      e.smap[func_name] = state;
       return state;
     }
   }
@@ -193,6 +193,9 @@ class MetalWrappedFunc {
       scache_[device_id] = m_->GetPipelineState(device_id, func_name_);
     }
     ThreadWorkLoad wl = thread_axis_cfg_.Extract(args);
+    int blockSize = wl.block_dim(0) * wl.block_dim(1) * wl.block_dim(2);
+    auto maxTotalThreadsPerThreadgroup = scache_[device_id].maxTotalThreadsPerThreadgroup;
+    CHECK_LE(blockSize, maxTotalThreadsPerThreadgroup);
     id<MTLCommandQueue> queue = w_->GetCommandQueue(t->context);
     @autoreleasepool {
       id<MTLCommandBuffer> cb = [queue commandBuffer];
@@ -210,8 +213,6 @@ class MetalWrappedFunc {
       // launch
       MTLSize dimGrid = MTLSizeMake(wl.grid_dim(0), wl.grid_dim(1), wl.grid_dim(2));
       MTLSize dimBlock = MTLSizeMake(wl.block_dim(0), wl.block_dim(1), wl.block_dim(2));
-      int blockSize = wl.block_dim(0) * wl.block_dim(1) * wl.block_dim(2);
-      CHECK_LE(blockSize, scache_[device_id].maxTotalThreadsPerThreadgroup);
       [encoder dispatchThreadgroups:dimGrid threadsPerThreadgroup:dimBlock];
       [encoder endEncoding];
       [cb commit];
