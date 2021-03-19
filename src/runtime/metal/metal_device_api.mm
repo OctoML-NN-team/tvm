@@ -30,50 +30,54 @@ namespace runtime {
 namespace metal {
 
 MetalWorkspace* MetalWorkspace::Global() {
-  // NOTE: explicitly use new to avoid exit-time destruction of global state
-  // Global state will be recycled by OS as the process exits.
-  static MetalWorkspace* inst = new MetalWorkspace();
-  return inst;
+  @autoreleasepool {
+    // NOTE: explicitly use new to avoid exit-time destruction of global state
+    // Global state will be recycled by OS as the process exits.
+    static MetalWorkspace* inst = new MetalWorkspace();
+    return inst;
+  }
 }
 
 void MetalWorkspace::GetAttr(TVMContext ctx, DeviceAttrKind kind, TVMRetValue* rv) {
-  this->Init();
-  size_t index = static_cast<size_t>(ctx.device_id);
-  if (kind == kExist) {
-    *rv = int(index < devices.size());
-    return;
-  }
-  ICHECK_LT(index, devices.size()) << "Invalid device id " << index;
-  switch (kind) {
-    case kMaxThreadsPerBlock: {
-      *rv = static_cast<int>([devices[ctx.device_id] maxThreadsPerThreadgroup].width);
-      break;
+  @autoreleasepool {
+    this->Init();
+    size_t index = static_cast<size_t>(ctx.device_id);
+    if (kind == kExist) {
+      *rv = int(index < devices.size());
+      return;
     }
-    case kWarpSize: {
-      // Set warp size to be 1 for safty reason.
-      *rv = 1;
-      break;
+    ICHECK_LT(index, devices.size()) << "Invalid device id " << index;
+    switch (kind) {
+      case kMaxThreadsPerBlock: {
+        *rv = static_cast<int>([devices[ctx.device_id] maxThreadsPerThreadgroup].width);
+        break;
+      }
+      case kWarpSize: {
+        // Set warp size to be 1 for safty reason.
+        *rv = 1;
+        break;
+      }
+      case kMaxSharedMemoryPerBlock:
+        return;
+      case kComputeVersion:
+        return;
+      case kDeviceName:
+        return;
+      case kMaxClockRate:
+        return;
+      case kMultiProcessorCount:
+        return;
+      case kMaxThreadDimensions:
+        return;
+      case kExist:
+        return;
+      case kMaxRegistersPerBlock:
+        return;
+      case kGcnArch:
+        return;
+      case kApiVersion:
+        return;
     }
-    case kMaxSharedMemoryPerBlock:
-      return;
-    case kComputeVersion:
-      return;
-    case kDeviceName:
-      return;
-    case kMaxClockRate:
-      return;
-    case kMultiProcessorCount:
-      return;
-    case kMaxThreadDimensions:
-      return;
-    case kExist:
-      return;
-    case kMaxRegistersPerBlock:
-      return;
-    case kGcnArch:
-      return;
-    case kApiVersion:
-      return;
   }
 }
 
@@ -98,7 +102,6 @@ kernel void CopyKernel(
 // But we keep this code.
 int GetWarpSize(id<MTLDevice> dev) {
   NSError* error_msg = nil;
-  int size = 0;
   id<MTLLibrary> lib = [dev newLibraryWithSource:[NSString stringWithUTF8String:kDummyKernel]
                                          options:nil
                                            error:&error_msg];
@@ -107,7 +110,7 @@ int GetWarpSize(id<MTLDevice> dev) {
   ICHECK(f != nil);
   id<MTLComputePipelineState> state = [dev newComputePipelineStateWithFunction:f error:&error_msg];
   ICHECK(state != nil) << [[error_msg localizedDescription] UTF8String];
-  size = static_cast<int>(state.threadExecutionWidth);
+  int size = static_cast<int>(state.threadExecutionWidth);
   [state release];
   [f release];
   [lib release];
@@ -152,40 +155,44 @@ void MetalWorkspace::SetDevice(TVMContext ctx) {
 
 void* MetalWorkspace::AllocDataSpace(TVMContext ctx, size_t nbytes, size_t alignment,
                                      DLDataType type_hint) {
-  this->Init();
-  id<MTLDevice> dev = GetDevice(ctx);
-  // GPU memory only
-  MTLResourceOptions storage_mode = MTLResourceStorageModePrivate;
-  /*
-  #if TARGET_OS_IPHONE
-  storage_mode = MTLResourceStorageModeShared;
-  #else
-  storage_mode = MTLResourceStorageModeManaged;
-  #endif
-  */
-  id<MTLBuffer> buf = [dev newBufferWithLength:nbytes options:storage_mode];
-  ICHECK(buf != nil);
-  return (void*)(buf);
+  @autoreleasepool {
+    this->Init();
+    id<MTLDevice> dev = GetDevice(ctx);
+    // GPU memory only
+    MTLResourceOptions storage_mode = MTLResourceStorageModePrivate;
+    /*
+    #if TARGET_OS_IPHONE
+    storage_mode = MTLResourceStorageModeShared;
+    #else
+    storage_mode = MTLResourceStorageModeManaged;
+    #endif
+    */
+    id<MTLBuffer> buf = [dev newBufferWithLength:nbytes options:storage_mode];
+    ICHECK(buf != nil);
+    return (void*)(buf);
+  }
 }
 
 void MetalWorkspace::FreeDataSpace(TVMContext ctx, void* ptr) {
-  // MTLBuffer PurgeableState should be set to empty before manual
-  // release in order to prevent memory leak
-  [(id<MTLBuffer>)ptr setPurgeableState:MTLPurgeableStateEmpty];
-  // release the ptr.
-  CFRelease(ptr);
+  @autoreleasepool {
+    // MTLBuffer PurgeableState should be set to empty before manual
+    // release in order to prevent memory leak
+    [(id<MTLBuffer>)ptr setPurgeableState:MTLPurgeableStateEmpty];
+    // release the ptr.
+    CFRelease(ptr);
+  }
 }
 
 void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* to,
                                     size_t to_offset, size_t size, TVMContext ctx_from,
                                     TVMContext ctx_to, DLDataType type_hint,
                                     TVMStreamHandle stream) {
-  this->Init();
-  ICHECK(stream == nullptr);
-  TVMContext ctx = ctx_from;
-  if (ctx_from.device_type == kDLCPU) ctx = ctx_to;
-  id<MTLCommandQueue> queue = GetCommandQueue(ctx);
   @autoreleasepool {
+    this->Init();
+    ICHECK(stream == nullptr);
+    TVMContext ctx = ctx_from;
+    if (ctx_from.device_type == kDLCPU) ctx = ctx_to;
+    id<MTLCommandQueue> queue = GetCommandQueue(ctx);
     id<MTLCommandBuffer> cb = [queue commandBuffer];
     int from_dev_type = static_cast<int>(ctx_from.device_type);
     int to_dev_type = static_cast<int>(ctx_to.device_type);
@@ -193,15 +200,15 @@ void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* 
     if (from_dev_type == kDLMetal && to_dev_type == kDLMetal) {
       ICHECK_EQ(ctx_from.device_id, ctx_to.device_id) << "Metal disallow cross device copy.";
       id<MTLBlitCommandEncoder> encoder = [cb blitCommandEncoder];
-      [encoder copyFromBuffer:(__bridge id<MTLBuffer>)(from)
+      [encoder copyFromBuffer:(id<MTLBuffer>)(from)
                  sourceOffset:from_offset
-                     toBuffer:(__bridge id<MTLBuffer>)(to)destinationOffset:to_offset
+                     toBuffer:(id<MTLBuffer>)(to)destinationOffset:to_offset
                          size:size];
       [encoder endEncoding];
       [cb commit];
     } else if (from_dev_type == kDLMetal && to_dev_type == kDLCPU) {
       // copy to a local buffer before get into global buffer.
-      id<MTLBuffer> from_buf = (__bridge id<MTLBuffer>)(from);
+      id<MTLBuffer> from_buf = (id<MTLBuffer>)(from);
       if (from_buf.storageMode != MTLStorageModeShared) {
         id<MTLBuffer> temp = MetalThreadEntry::ThreadLocal()->GetTempBuffer(ctx_from, size);
         id<MTLBlitCommandEncoder> encoder = [cb blitCommandEncoder];
@@ -219,7 +226,7 @@ void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* 
                static_cast<char*>([from_buf contents]) + from_offset, size);
       }
     } else if (from_dev_type == kDLCPU && to_dev_type == kDLMetal) {
-      id<MTLBuffer> to_buf = (__bridge id<MTLBuffer>)(to);
+      id<MTLBuffer> to_buf = (id<MTLBuffer>)(to);
       if (to_buf.storageMode != MTLStorageModeShared) {
         id<MTLBuffer> temp = MetalThreadEntry::ThreadLocal()->GetTempBuffer(ctx_to, size);
         memcpy([temp contents], static_cast<const char*>(from) + from_offset, size);
@@ -244,10 +251,10 @@ void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* 
 }
 
 void MetalWorkspace::StreamSync(TVMContext ctx, TVMStreamHandle stream) {
-  ICHECK(stream == nullptr);
-  // commit an empty command buffer and wait until it completes.
-  id<MTLCommandQueue> queue = GetCommandQueue(ctx);
   @autoreleasepool {
+    ICHECK(stream == nullptr);
+    // commit an empty command buffer and wait until it completes.
+    id<MTLCommandQueue> queue = GetCommandQueue(ctx);
     id<MTLCommandBuffer> cb = [queue commandBuffer];
     [cb commit];
     [cb waitUntilCompleted];
@@ -278,6 +285,7 @@ id<MTLBuffer> MetalThreadEntry::GetTempBuffer(TVMContext ctx, size_t size) {
   if (temp_buffer_[ctx.device_id] == nil || temp_buffer_[ctx.device_id].length < size) {
     id<MTLDevice> dev = MetalWorkspace::Global()->GetDevice(ctx);
     if (temp_buffer_[ctx.device_id] != nil) {
+      [temp_buffer_[ctx.device_id] setPurgeableState:MTLPurgeableStateEmpty];
       [temp_buffer_[ctx.device_id] release];
     }
     temp_buffer_[ctx.device_id] = [dev newBufferWithLength:size options:MTLStorageModeShared];
