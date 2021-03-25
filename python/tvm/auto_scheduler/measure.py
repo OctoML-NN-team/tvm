@@ -1108,6 +1108,11 @@ def _timed_rpc_run(
                     "task_inputs not fully matched, check if there's any unexpected error"
                 )
             dev.sync()
+
+            # First run for check that the kernel is correct
+            func.entry_func(*args)
+            dev.sync()
+
             costs = time_f(*args).results
 
             # clean up remote files

@@ -193,6 +193,11 @@ void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* 
     if (dev_from.device_type == kDLCPU) dev = dev_to;
     id<MTLCommandQueue> queue = GetCommandQueue(dev);
     id<MTLCommandBuffer> cb = [queue commandBuffer];
+    [cb addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+      if (buffer.status == MTLCommandBufferStatusError) {
+        SetErrorStatus(true);
+      }
+    }];
     int from_dev_type = static_cast<int>(dev_from.device_type);
     int to_dev_type = static_cast<int>(dev_to.device_type);
 
@@ -255,8 +260,14 @@ void MetalWorkspace::StreamSync(Device dev, TVMStreamHandle stream) {
     // commit an empty command buffer and wait until it completes.
     id<MTLCommandQueue> queue = GetCommandQueue(dev);
     id<MTLCommandBuffer> cb = [queue commandBuffer];
+    [cb addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+      if (buffer.status == MTLCommandBufferStatusError) {
+        SetErrorStatus(true);
+      }
+    }];
     [cb commit];
     [cb waitUntilCompleted];
+    ICHECK(GetErrorStatus() == false);
   }
 }
 
@@ -266,6 +277,16 @@ void* MetalWorkspace::AllocWorkspace(Device dev, size_t size, DLDataType type_hi
 
 void MetalWorkspace::FreeWorkspace(Device dev, void* data) {
   MetalThreadEntry::ThreadLocal()->pool.FreeWorkspace(dev, data);
+}
+
+void MetalWorkspace::SetErrorStatus(bool error_happened) {
+  std::lock_guard<std::mutex> lock(this->mutex);
+  error_happened_ = error_happened;
+}
+
+bool MetalWorkspace::GetErrorStatus() {
+  std::lock_guard<std::mutex> lock(this->mutex);
+  return error_happened_;
 }
 
 MetalThreadEntry::~MetalThreadEntry() {
