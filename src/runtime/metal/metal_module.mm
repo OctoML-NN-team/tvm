@@ -179,10 +179,12 @@ class MetalWrappedFunc {
     metal::MetalThreadEntry* t = metal::MetalThreadEntry::ThreadLocal();
     int dev_id = t->context.device_id;
     scache_[dev_id] = m->GetPipelineState(dev_id, func_name);
+    w_->SetErrorStatus(false);
   }
   // invoke the function with void arguments
   void operator()(TVMArgs args, TVMRetValue* rv, const ArgUnion64* pack_args) const {
     @autoreleasepool {
+      if (w_->GetErrorStatus()) return;
       metal::MetalThreadEntry* t = metal::MetalThreadEntry::ThreadLocal();
       int device_id = t->context.device_id;
       if (scache_[device_id] == nil) {
@@ -194,6 +196,11 @@ class MetalWrappedFunc {
       CHECK_LE(blockSize, maxTotalThreadsPerThreadgroup);
       id<MTLCommandQueue> queue = w_->GetCommandQueue(t->context);
       id<MTLCommandBuffer> cb = [queue commandBuffer];
+      [cb addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+        if (buffer.status == MTLCommandBufferStatusError) {
+          w_->SetErrorStatus(true);
+        }
+      }];
       id<MTLComputeCommandEncoder> encoder = [cb computeCommandEncoder];
       [encoder setComputePipelineState:scache_[device_id]];
       for (size_t i = 0; i < num_buffer_args_; ++i) {

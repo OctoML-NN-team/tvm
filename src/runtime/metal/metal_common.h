@@ -60,6 +60,8 @@ class MetalWorkspace final : public DeviceAPI {
   bool initialized_{false};
   // the mutex for initialization
   std::mutex mutex;
+  // Check if error happened in one previous run
+  bool error_happened_{false};
   // Destructor
   ~MetalWorkspace();
   // Get command queue for given context.
@@ -87,6 +89,8 @@ class MetalWorkspace final : public DeviceAPI {
   void StreamSync(TVMContext ctx, TVMStreamHandle stream) final;
   void* AllocWorkspace(TVMContext ctx, size_t size, DLDataType type_hint) final;
   void FreeWorkspace(TVMContext ctx, void* data) final;
+  void SetErrorStatus(bool error_happened);
+  bool GetErrorStatus();
   // get the global workspace
   static MetalWorkspace* Global();
 
