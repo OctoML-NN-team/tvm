@@ -260,14 +260,12 @@ void MetalWorkspace::StreamSync(Device dev, TVMStreamHandle stream) {
     // commit an empty command buffer and wait until it completes.
     id<MTLCommandQueue> queue = GetCommandQueue(dev);
     id<MTLCommandBuffer> cb = [queue commandBuffer];
-    [cb addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
-      if (buffer.status == MTLCommandBufferStatusError) {
-        SetErrorStatus(true);
-      }
-    }];
     [cb commit];
     [cb waitUntilCompleted];
-    ICHECK(GetErrorStatus() == false);
+    if (GetErrorStatus() || cb.status == MTLCommandBufferStatusError) {
+        SetErrorStatus(false);
+        LOG(FATAL) << "Error! Some problems on GPU happaned!";
+    }
   }
 }
 
