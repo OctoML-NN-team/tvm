@@ -183,8 +183,8 @@ class MetalWrappedFunc {
   // invoke the function with void arguments
   void operator()(TVMArgs args, TVMRetValue* rv, const ArgUnion64* pack_args) const {
     @autoreleasepool {
-      if (w_->GetErrorStatus()) return;
       metal::MetalThreadEntry* t = metal::MetalThreadEntry::ThreadLocal();
+      auto queue = w_->GetCommandQueue(t->device);
       int device_id = t->device.device_id;
       if (scache_[device_id] == nil) {
         scache_[device_id] = m_->GetPipelineState(device_id, func_name_);
@@ -193,11 +193,10 @@ class MetalWrappedFunc {
       int blockSize = wl.block_dim(0) * wl.block_dim(1) * wl.block_dim(2);
       auto maxTotalThreadsPerThreadgroup = scache_[device_id].maxTotalThreadsPerThreadgroup;
       CHECK_LE(blockSize, maxTotalThreadsPerThreadgroup);
-      id<MTLCommandQueue> queue = w_->GetCommandQueue(t->device);
-      id<MTLCommandBuffer> cb = [queue commandBuffer];
+      id<MTLCommandBuffer> cb = [queue.queue_ commandBuffer];
       [cb addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
         if (buffer.status == MTLCommandBufferStatusError) {
-          w_->SetErrorStatus(true);
+          w_->SetErrorStatus(device_id, true);
         }
       }];
       id<MTLComputeCommandEncoder> encoder = [cb computeCommandEncoder];
@@ -259,7 +258,9 @@ PackedFunc MetalModuleNode::GetFunction(const std::string& name,
 Module MetalModuleCreate(std::string data, std::string fmt,
                          std::unordered_map<std::string, FunctionInfo> fmap, std::string source) {
   @autoreleasepool {
-    metal::MetalWorkspace::Global()->Init();
+    auto workspace = metal::MetalWorkspace::Global();
+    workspace->Init();
+    workspace->UpdateCommandQueues();
     auto n = make_object<MetalModuleNode>(data, fmt, fmap, source);
     return Module(n);
   }

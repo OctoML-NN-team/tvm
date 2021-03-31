@@ -50,27 +50,36 @@ namespace metal {
  */
 class MetalWorkspace final : public DeviceAPI {
  public:
+  struct Queue {
+    Queue(id<MTLCommandQueue> queue) : queue_(queue), error_happened_(false) {}
+    // Queue
+    id<MTLCommandQueue> queue_;
+    // Check if error happened in one previous run
+    bool error_happened_ = false;
+  };
   // the devices
   std::vector<id<MTLDevice> > devices;
   // the queues
-  std::vector<id<MTLCommandQueue> > queues;
+  std::vector<Queue> queues;
   // Warp size constant
   std::vector<int> warp_size;
   // Whether it is initialized.
   bool initialized_{false};
   // the mutex for initialization
   std::mutex mutex;
-  // Check if error happened in one previous run
-  bool error_happened_{false};
   // Destructor
   ~MetalWorkspace();
   // Get command queue for given device.
-  id<MTLCommandQueue> GetCommandQueue(Device dev) {
+  Queue GetCommandQueue(Device dev) {
     ICHECK_EQ(dev.device_type, kDLMetal);
     ICHECK(dev.device_id >= 0 && static_cast<size_t>(dev.device_id) < queues.size())
         << "Invalid Metal device_id=" << dev.device_id;
+    ICHECK(queues[dev.device_id].error_happened_ != true)
+        << "Error! You are trying to get queue there error happened";
     return queues[dev.device_id];
   }
+  // Update command queue for given context.
+  void UpdateCommandQueues();
   // Get device for given device
   id<MTLDevice> GetDevice(Device dev) {
     ICHECK_EQ(dev.device_type, kDLMetal);
@@ -89,8 +98,8 @@ class MetalWorkspace final : public DeviceAPI {
   void StreamSync(Device dev, TVMStreamHandle stream) final;
   void* AllocWorkspace(Device dev, size_t size, DLDataType type_hint) final;
   void FreeWorkspace(Device dev, void* data) final;
-  void SetErrorStatus(bool error_happened);
-  bool GetErrorStatus();
+  void SetErrorStatus(size_t dev_id, bool error_happened);
+
   // get the global workspace
   static MetalWorkspace* Global();
 
