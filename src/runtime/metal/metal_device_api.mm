@@ -38,6 +38,18 @@ MetalWorkspace* MetalWorkspace::Global() {
   }
 }
 
+void MetalWorkspace::UpdateCommandQueues() {
+  ICHECK_EQ(queues.size(), devices.size());
+  for (size_t i = 0; i < queues.size(); ++i) {
+    if (!queues[i].error_happened_) continue;
+    id<MTLCommandQueue> queue = [devices[i] newCommandQueue];
+    ICHECK(queue != nil);
+    [queues[i].queue_ release];
+    queues[i].queue_ = queue;
+    queues[i].error_happened_ = false;
+  }
+}
+
 void MetalWorkspace::GetAttr(TVMContext ctx, DeviceAttrKind kind, TVMRetValue* rv) {
   @autoreleasepool {
     this->Init();
@@ -122,7 +134,7 @@ MetalWorkspace::~MetalWorkspace() {
     [x release];
   }
   for (auto x : queues) {
-    [x release];
+    [x.queue_ release];
   }
 }
 
@@ -192,11 +204,11 @@ void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* 
     ICHECK(stream == nullptr);
     TVMContext ctx = ctx_from;
     if (ctx_from.device_type == kDLCPU) ctx = ctx_to;
-    id<MTLCommandQueue> queue = GetCommandQueue(ctx);
-    id<MTLCommandBuffer> cb = [queue commandBuffer];
+    __block Queue queue = GetCommandQueue(ctx);
+    id<MTLCommandBuffer> cb = [queue.queue_ commandBuffer];
     [cb addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
       if (buffer.status == MTLCommandBufferStatusError) {
-        SetErrorStatus(true);
+        SetErrorStatus(ctx.device_id, true);
       }
     }];
     int from_dev_type = static_cast<int>(ctx_from.device_type);
@@ -259,12 +271,11 @@ void MetalWorkspace::StreamSync(TVMContext ctx, TVMStreamHandle stream) {
   @autoreleasepool {
     ICHECK(stream == nullptr);
     // commit an empty command buffer and wait until it completes.
-    id<MTLCommandQueue> queue = GetCommandQueue(ctx);
-    id<MTLCommandBuffer> cb = [queue commandBuffer];
+    Queue queue = GetCommandQueue(ctx);
+    id<MTLCommandBuffer> cb = [queue.queue_ commandBuffer];
     [cb commit];
     [cb waitUntilCompleted];
-    if (GetErrorStatus() || cb.status == MTLCommandBufferStatusError) {
-        SetErrorStatus(false);
+    if (cb.status == MTLCommandBufferStatusError) {
         LOG(FATAL) << "Error! Some problems on GPU happaned!";
     }
   }
@@ -276,16 +287,6 @@ void* MetalWorkspace::AllocWorkspace(TVMContext ctx, size_t size, DLDataType typ
 
 void MetalWorkspace::FreeWorkspace(TVMContext ctx, void* data) {
   MetalThreadEntry::ThreadLocal()->pool.FreeWorkspace(ctx, data);
-}
-
-void MetalWorkspace::SetErrorStatus(bool error_happened) {
-  std::lock_guard<std::mutex> lock(this->mutex);
-  error_happened_ = error_happened;
-}
-
-bool MetalWorkspace::GetErrorStatus() {
-  std::lock_guard<std::mutex> lock(this->mutex);
-  return error_happened_;
 }
 
 MetalThreadEntry::~MetalThreadEntry() {

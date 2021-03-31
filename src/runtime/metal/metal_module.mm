@@ -36,6 +36,55 @@
 namespace tvm {
 namespace runtime {
 
+//static const char* my_kernel = R"A0B0(
+//#include <metal_stdlib>
+//using namespace metal;
+//
+//union __TVMArgUnion {
+// int v_int;
+//};
+//
+//kernel void fused_nn_conv2d_kernel0(  device float* placeholder [[ buffer(0) ]],
+//  device float* placeholder1 [[ buffer(1) ]],
+//  device float* compute [[ buffer(2) ]],
+//  uint blockIdx [[threadgroup_position_in_grid]],
+//  uint threadIdx [[thread_position_in_threadgroup]]
+//) {
+//  thread float compute_local[2];
+//  threadgroup float pad_temp_shared[1536];
+//  threadgroup float placeholder_shared[27];
+//  compute_local[(0)] = 0.000000e+00f;
+//  compute_local[(1)] = 0.000000e+00f;
+//  for (int rx_outer_outer = 0; rx_outer_outer < 3; ++rx_outer_outer) {
+//    threadgroup_barrier(mem_flags::mem_threadgroup);
+//    if (((int)threadIdx) < 512) {
+//      pad_temp_shared[((((int)threadIdx) * 3))] = placeholder[(((((((((int)threadIdx) * 3) >> 1) * 256) + (((int)blockIdx) * 2)) + rx_outer_outer) + ((((int)threadIdx) * 3) & 1)))];
+//    }
+//    if (((int)threadIdx) < 512) {
+//      pad_temp_shared[(((((int)threadIdx) * 3) + 1))] = placeholder[((((((((((int)threadIdx) * 3) + 1) >> 1) * 256) + (((int)blockIdx) * 2)) + rx_outer_outer) + (((((int)threadIdx) * 3) + 1) & 1)))];
+//    }
+//    if (((int)threadIdx) < 512) {
+//      pad_temp_shared[(((((int)threadIdx) * 3) + 2))] = placeholder[((((((((((int)threadIdx) * 3) >> 1) * 256) + (((int)blockIdx) * 2)) + rx_outer_outer) + ((((int)threadIdx) * 3) & 1)) + 256))];
+//    }
+//    if (((int)threadIdx) < 27) {
+//      placeholder_shared[(((int)threadIdx))] = placeholder1[(((((int)threadIdx) * 3) + rx_outer_outer))];
+//    }
+//    threadgroup_barrier(mem_flags::mem_threadgroup);
+//    for (int rc_outer_inner = 0; rc_outer_inner < 3; ++rc_outer_inner) {
+//      compute_local[(0)] = (compute_local[(0)] + (pad_temp_shared[(((rc_outer_inner * 512) + ((((int)threadIdx) % 254) * 2)))] * placeholder_shared[((((((int)threadIdx) / 254) * 9) + (rc_outer_inner * 3)))]));
+//      compute_local[(0)] = (compute_local[(0)] + (pad_temp_shared[((((rc_outer_inner * 512) + ((((int)threadIdx) % 254) * 2)) + 2))] * placeholder_shared[(((((((int)threadIdx) / 254) * 9) + (rc_outer_inner * 3)) + 1))]));
+//      compute_local[(0)] = (compute_local[(0)] + (pad_temp_shared[((((rc_outer_inner * 512) + ((((int)threadIdx) % 254) * 2)) + 4))] * placeholder_shared[(((((((int)threadIdx) / 254) * 9) + (rc_outer_inner * 3)) + 2))]));
+//      compute_local[(1)] = (compute_local[(1)] + (pad_temp_shared[((((rc_outer_inner * 512) + ((((int)threadIdx) % 254) * 2)) + 1))] * placeholder_shared[((((((int)threadIdx) / 254) * 9) + (rc_outer_inner * 3)))]));
+//      compute_local[(1)] = (compute_local[(1)] + (pad_temp_shared[((((rc_outer_inner * 512) + ((((int)threadIdx) % 254) * 2)) + 3))] * placeholder_shared[(((((((int)threadIdx) / 254) * 9) + (rc_outer_inner * 3)) + 1))]));
+//      compute_local[(1)] = (compute_local[(1)] + (pad_temp_shared[((((rc_outer_inner * 512) + ((((int)threadIdx) % 254) * 2)) + 5))] * placeholder_shared[(((((((int)threadIdx) / 254) * 9) + (rc_outer_inner * 3)) + 2))]));
+//    }
+//  }
+//  for (int xx_inner = 0; xx_inner < 2; ++xx_inner) {
+//    compute[((((((int)threadIdx) * 254) + (((int)blockIdx) * 2)) + xx_inner))] = compute_local[(xx_inner)];
+//  }
+//}
+//)A0B0";
+
 // Module to support thread-safe multi-GPU execution.
 // The runtime will contain a per-device module table
 // The modules will be lazily loaded
@@ -95,6 +144,9 @@ class MetalModuleNode final : public runtime::ModuleNode {
             newLibraryWithSource:[NSString stringWithUTF8String:data_.c_str()]
                          options:opts
                            error:&err_msg];
+            //newLibraryWithSource:[NSString stringWithUTF8String:my_kernel]
+            //             options:opts
+            //               error:&err_msg];
         [opts dealloc];
         if (e.lib == nil) {
           LOG(FATAL) << "Fail to compile metal lib:" << [[err_msg localizedDescription] UTF8String];
@@ -116,6 +168,7 @@ class MetalModuleNode final : public runtime::ModuleNode {
     }
     id<MTLFunction> f =
         [e.lib newFunctionWithName:[NSString stringWithUTF8String:func_name.c_str()]];
+    //id<MTLFunction> f = [e.lib newFunctionWithName:@"fused_nn_conv2d_kernel0"];
     ICHECK(f != nil) << "cannot find function " << func_name;
     id<MTLComputePipelineState> state =
         [w->devices[device_id] newComputePipelineStateWithFunction:f error:&err_msg];
@@ -183,8 +236,9 @@ class MetalWrappedFunc {
   // invoke the function with void arguments
   void operator()(TVMArgs args, TVMRetValue* rv, const ArgUnion64* pack_args) const {
     @autoreleasepool {
-      if (w_->GetErrorStatus()) return;
       metal::MetalThreadEntry* t = metal::MetalThreadEntry::ThreadLocal();
+      __block auto queue = w_->GetCommandQueue(t->context);
+      //std::cout << "MetalWrappedFunc::Operator(), queue.err: " << queue.error_happened_ << std::endl;
       int device_id = t->context.device_id;
       if (scache_[device_id] == nil) {
         scache_[device_id] = m_->GetPipelineState(device_id, func_name_);
@@ -193,19 +247,26 @@ class MetalWrappedFunc {
       int blockSize = wl.block_dim(0) * wl.block_dim(1) * wl.block_dim(2);
       auto maxTotalThreadsPerThreadgroup = scache_[device_id].maxTotalThreadsPerThreadgroup;
       CHECK_LE(blockSize, maxTotalThreadsPerThreadgroup);
-      id<MTLCommandQueue> queue = w_->GetCommandQueue(t->context);
-      id<MTLCommandBuffer> cb = [queue commandBuffer];
+      id<MTLCommandBuffer> cb = [queue.queue_ commandBuffer];
       [cb addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
         if (buffer.status == MTLCommandBufferStatusError) {
-          w_->SetErrorStatus(true);
+          w_->SetErrorStatus(device_id, true);
+          std::cout << "ERROR HANDLED" << std::endl;
         }
       }];
+    //id<MTLDevice> device = w_->GetDevice(t->context);
+    //id<MTLBuffer> data = [device newBufferWithLength:786432 options:MTLResourceStorageModeShared];
+    //id<MTLBuffer> w = [device newBufferWithLength:324 options:MTLResourceStorageModeShared];
+    //id<MTLBuffer> out = [device newBufferWithLength:774192 options:MTLResourceStorageModeShared];
       id<MTLComputeCommandEncoder> encoder = [cb computeCommandEncoder];
       [encoder setComputePipelineState:scache_[device_id]];
       for (size_t i = 0; i < num_buffer_args_; ++i) {
         void* buf = args[static_cast<int>(i)];
         [encoder setBuffer:(id<MTLBuffer>)(buf) offset:0 atIndex:i];
       }
+      //[encoder setBuffer:data offset:0 atIndex:0];
+      //[encoder setBuffer:w offset:0 atIndex:1];
+      //[encoder setBuffer:out offset:0 atIndex:2];
       if (num_pack_args_ != 0) {
         [encoder setBytes:pack_args
                    length:num_pack_args_ * sizeof(ArgUnion64)
@@ -214,9 +275,14 @@ class MetalWrappedFunc {
       // launch
       MTLSize dimGrid = MTLSizeMake(wl.grid_dim(0), wl.grid_dim(1), wl.grid_dim(2));
       MTLSize dimBlock = MTLSizeMake(wl.block_dim(0), wl.block_dim(1), wl.block_dim(2));
+      //MTLSize dimGrid = MTLSizeMake(127, 1, 1);
+      //MTLSize dimBlock = MTLSizeMake(762, 1, 1);
       [encoder dispatchThreadgroups:dimGrid threadsPerThreadgroup:dimBlock];
       [encoder endEncoding];
       [cb commit];
+      //[data release];
+      //[w release];
+      //[out release];
     }
   }
 
@@ -259,7 +325,9 @@ PackedFunc MetalModuleNode::GetFunction(const std::string& name,
 Module MetalModuleCreate(std::string data, std::string fmt,
                          std::unordered_map<std::string, FunctionInfo> fmap, std::string source) {
   @autoreleasepool {
-    metal::MetalWorkspace::Global()->Init();
+    auto workspace = metal::MetalWorkspace::Global();
+    workspace->Init();
+    workspace->UpdateCommandQueues();
     auto n = make_object<MetalModuleNode>(data, fmt, fmap, source);
     return Module(n);
   }
