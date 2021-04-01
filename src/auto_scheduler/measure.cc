@@ -228,8 +228,6 @@ void ProgramMeasurerNode::Reset() {
   has_valid.clear();
 }
 
-MeasureInput stub_input;
-
 Array<MeasureResult> ProgramMeasurerNode::Measure(const SearchTask& task,
                                                   const SearchPolicy& policy,
                                                   const Array<MeasureInput>& inputs,
@@ -249,13 +247,8 @@ Array<MeasureResult> ProgramMeasurerNode::Measure(const SearchTask& task,
   StdCout(verbose) << "Get " << inputs.size() << " programs to measure:" << std::endl;
 
   for (size_t i = 0; i < inputs.size(); i += batch_size) {
-    if (!stub_input.defined())
-      stub_input = inputs[0];
-
-    Array<MeasureInput> input_batch(batch_size, stub_input);
-    
-//    Array<MeasureInput> input_batch(inputs.begin() + i,
-//                                    inputs.begin() + std::min(i + batch_size, inputs.size()));
+    Array<MeasureInput> input_batch(inputs.begin() + i,
+                                    inputs.begin() + std::min(i + batch_size, inputs.size()));
     Array<MeasureResult> result_batch;
 
     // build and run
