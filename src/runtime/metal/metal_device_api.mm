@@ -39,9 +39,11 @@ MetalWorkspace* MetalWorkspace::Global() {
 }
 
 void MetalWorkspace::UpdateCommandQueues() {
+    std::cout << " >>> In MetalWorkspace::UpdateCommandQueues()" << std::endl;
   ICHECK_EQ(queues.size(), devices.size());
   for (size_t i = 0; i < queues.size(); ++i) {
     if (!queues[i].error_happened_) continue;
+    std::cout << " >>> MetalWorkspace::UpdateCommandQueues(): change" << std::endl;
     id<MTLCommandQueue> queue = [devices[i] newCommandQueue];
     ICHECK(queue != nil);
     [queues[i].queue_ release];
@@ -204,10 +206,11 @@ void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* 
     ICHECK(stream == nullptr);
     TVMContext ctx = ctx_from;
     if (ctx_from.device_type == kDLCPU) ctx = ctx_to;
-    __block Queue queue = GetCommandQueue(ctx);
+    Queue queue = GetCommandQueue(ctx);
     id<MTLCommandBuffer> cb = [queue.queue_ commandBuffer];
     [cb addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
       if (buffer.status == MTLCommandBufferStatusError) {
+        std::cout << "MetalWorkspace::CopyDataFromTo ERROR HANDLE" << std::endl;
         SetErrorStatus(ctx.device_id, true);
       }
     }];
