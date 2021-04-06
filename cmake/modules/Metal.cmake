@@ -24,6 +24,10 @@ if(USE_METAL)
   list(APPEND RUNTIME_SRCS ${RUNTIME_METAL_SRCS})
 
   if(USE_MPS)
+    file(GLOB MPS_RELAY_CONTRIB_SRC src/relay/backend/contrib/mps/*.cc)
+    list(APPEND COMPILER_SRCS ${MPS_RELAY_CONTRIB_SRC})
+    list(APPEND COMPILER_SRCS ${JSON_RELAY_CONTRIB_SRC})
+
     file(GLOB MPS_CONTRIB_SRC src/runtime/contrib/mps/*.mm)
     list(APPEND RUNTIME_SRCS ${MPS_CONTRIB_SRC})
     find_library(MPS_CONTRIB_LIB MetalPerformanceShaders)
