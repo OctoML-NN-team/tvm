@@ -16,7 +16,7 @@
 # under the License.
 import tvm
 import tvm.testing
-from tvm import te
+from tvm import te, relay
 import numpy as np
 from tvm.contrib import mps
 
@@ -90,5 +90,6 @@ def test_conv2d():
 
 
 if __name__ == "__main__":
-    # test_matmul()
     test_conv2d()
+
+

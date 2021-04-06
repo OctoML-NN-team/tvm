@@ -111,7 +111,7 @@ class MetalWorkspace final : public DeviceAPI {
   // get the global workspace
   static MetalWorkspace* Global();
 
- protected:
+ public:
   void CopyDataFromTo(const void* from, size_t from_size, void* to, size_t to_size, size_t size,
                       Device dev_from, Device dev_to, DLDataType type_hint,
                       TVMStreamHandle stream) final;

@@ -19,6 +19,11 @@
 
 #include "mps_utils.h"
 
+#include <chrono>
+
+typedef std::chrono::high_resolution_clock Time;
+typedef std::chrono::nanoseconds ns;
+
 namespace tvm {
 namespace contrib {
 
@@ -75,6 +80,7 @@ TVM_REGISTER_GLOBAL("tvm.contrib.mps.img2buffer").set_body([](TVMArgs args, TVMR
 });
 
 TVM_REGISTER_GLOBAL("tvm.contrib.mps.conv2d").set_body([](TVMArgs args, TVMRetValue* ret) {
+  Time::time_point time1 = Time::now();
   // MPS-NHWC
   DLTensor* data = args[0];
   DLTensor* weight = args[1];
@@ -102,9 +108,10 @@ TVM_REGISTER_GLOBAL("tvm.contrib.mps.conv2d").set_body([](TVMArgs args, TVMRetVa
   // Get Metal device API
   MetalThreadEntry* entry_ptr = MetalThreadEntry::ThreadLocal();
   runtime::metal::MetalThreadEntry* rt = runtime::metal::MetalThreadEntry::ThreadLocal();
+  ICHECK(rt->stream != nullptr);
   id<MTLDevice> dev = entry_ptr->metal_api->GetDevice(data->device);
-  id<MTLCommandQueue> queue = entry_ptr->metal_api->GetCommandQueue(data->device);
-  id<MTLCommandBuffer> cb = [queue commandBuffer];
+  auto* queue = static_cast<runtime::metal::MetalThreadEntry::Queue*>(rt->stream);
+  id<MTLCommandBuffer> cb = [queue->queue_ commandBuffer];
   // data to MPSImage
   DLTensor tmp_in;
   (*f_buf2img)(data, &tmp_in);
@@ -122,6 +129,7 @@ TVM_REGISTER_GLOBAL("tvm.contrib.mps.conv2d").set_body([](TVMArgs args, TVMRetVa
   MPSImage* tempC = (__bridge MPSImage*)tmp_out.data;
   // conv desc
 
+  Time::time_point time3 = Time::now();
   MPSCNNConvolutionDescriptor* conv_desc =
       [MPSCNNConvolutionDescriptor cnnConvolutionDescriptorWithKernelWidth:kW
                                                               kernelHeight:kH
@@ -145,6 +153,7 @@ TVM_REGISTER_GLOBAL("tvm.contrib.mps.conv2d").set_body([](TVMArgs args, TVMRetVa
                                                           MPSNNPaddingMethodSizeValidOnly];
   }
   [conv encodeToCommandBuffer:cb sourceImage:tempA destinationImage:tempC];
+  Time::time_point time4 = Time::now();
 
   [cb commit];
   id<MTLBlitCommandEncoder> encoder = [cb blitCommandEncoder];
@@ -153,6 +162,9 @@ TVM_REGISTER_GLOBAL("tvm.contrib.mps.conv2d").set_body([](TVMArgs args, TVMRetVa
   [cb waitUntilCompleted];
 
   (*f_img2buf)(&tmp_out, output);
+  Time::time_point time2 = Time::now();
+  std::cout << "Comp conv time: " << std::chrono::duration_cast<ns>(time4 - time3).count() * 0.000001 << std::endl;
+  std::cout << "Whole conv time: " << std::chrono::duration_cast<ns>(time2 - time1).count() * 0.000001 << std::endl;
 });
 
 }  // namespace contrib
