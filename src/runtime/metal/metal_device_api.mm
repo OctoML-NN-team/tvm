@@ -38,20 +38,6 @@ MetalWorkspace* MetalWorkspace::Global() {
   }
 }
 
-void MetalWorkspace::UpdateCommandQueues() {
-    std::cout << " >>> In MetalWorkspace::UpdateCommandQueues()" << std::endl;
-  ICHECK_EQ(queues.size(), devices.size());
-  for (size_t i = 0; i < queues.size(); ++i) {
-    if (!queues[i].error_happened_) continue;
-    std::cout << " >>> MetalWorkspace::UpdateCommandQueues(): change" << std::endl;
-    id<MTLCommandQueue> queue = [devices[i] newCommandQueue];
-    ICHECK(queue != nil);
-    [queues[i].queue_ release];
-    queues[i].queue_ = queue;
-    queues[i].error_happened_ = false;
-  }
-}
-
 void MetalWorkspace::GetAttr(TVMContext ctx, DeviceAttrKind kind, TVMRetValue* rv) {
   @autoreleasepool {
     this->Init();
@@ -135,9 +121,6 @@ MetalWorkspace::~MetalWorkspace() {
   for (auto x : devices) {
     [x release];
   }
-  for (auto x : queues) {
-    [x.queue_ release];
-  }
 }
 
 void MetalWorkspace::Init() {
@@ -150,13 +133,11 @@ void MetalWorkspace::Init() {
   // on iPhone
   id<MTLDevice> d = MTLCreateSystemDefaultDevice();
   devices.push_back(d);
-  queues.push_back([d newCommandQueue]);
 #else
   NSArray<id<MTLDevice> >* devs = MTLCopyAllDevices();
   for (size_t i = 0; i < devs.count; ++i) {
     id<MTLDevice> d = [devs objectAtIndex:i];
     devices.push_back(d);
-    queues.push_back([d newCommandQueue]);
     LOG(INFO) << "Intializing Metal device " << i << ", name=" << [d.name UTF8String];
     warp_size.push_back(GetWarpSize(d));
   }
@@ -203,15 +184,15 @@ void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* 
                                     TVMStreamHandle stream) {
   @autoreleasepool {
     this->Init();
-    ICHECK(stream == nullptr);
+    ICHECK(stream != nullptr);
     TVMContext ctx = ctx_from;
+    __block MetalThreadEntry::Queue* queue = static_cast<MetalThreadEntry::Queue*>(stream);
+    if (queue->error_happened_) return;
     if (ctx_from.device_type == kDLCPU) ctx = ctx_to;
-    Queue queue = GetCommandQueue(ctx);
-    id<MTLCommandBuffer> cb = [queue.queue_ commandBuffer];
+    id<MTLCommandBuffer> cb = [queue->queue_ commandBuffer];
     [cb addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
       if (buffer.status == MTLCommandBufferStatusError) {
-        std::cout << "MetalWorkspace::CopyDataFromTo ERROR HANDLE" << std::endl;
-        SetErrorStatus(ctx.device_id, true);
+        queue->error_happened_ = true;
       }
     }];
     int from_dev_type = static_cast<int>(ctx_from.device_type);
@@ -270,18 +251,34 @@ void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* 
   }
 }
 
+TVMStreamHandle MetalWorkspace::CreateStream(TVMContext ctx) {
+  MetalThreadEntry::Queue* queue =
+      new MetalThreadEntry::Queue([devices[ctx.device_id] newCommandQueue]);
+  return static_cast<TVMStreamHandle>(queue);
+}
+
+void MetalWorkspace::FreeStream(TVMContext ctx, TVMStreamHandle stream) {
+  if (stream == nullptr) return;
+  MetalThreadEntry::Queue* queue = static_cast<MetalThreadEntry::Queue*>(stream);
+  delete queue;
+}
+
 void MetalWorkspace::StreamSync(TVMContext ctx, TVMStreamHandle stream) {
   @autoreleasepool {
-    ICHECK(stream == nullptr);
+    ICHECK(stream != nullptr);
+    __block MetalThreadEntry::Queue* queue = static_cast<MetalThreadEntry::Queue*>(stream);
     // commit an empty command buffer and wait until it completes.
-    Queue queue = GetCommandQueue(ctx);
-    id<MTLCommandBuffer> cb = [queue.queue_ commandBuffer];
+    id<MTLCommandBuffer> cb = [queue->queue_ commandBuffer];
     [cb commit];
     [cb waitUntilCompleted];
-    if (cb.status == MTLCommandBufferStatusError) {
-        LOG(FATAL) << "Error! Some problems on GPU happaned!";
+    if (cb.status == MTLCommandBufferStatusError || queue->error_happened_) {
+      LOG(FATAL) << "Error! Some problems on GPU happaned!";
     }
   }
+}
+
+void MetalWorkspace::SetStream(TVMContext ctx, TVMStreamHandle stream) {
+  MetalThreadEntry::ThreadLocal()->stream = static_cast<MetalThreadEntry::Queue*>(stream);
 }
 
 void* MetalWorkspace::AllocWorkspace(TVMContext ctx, size_t size, DLDataType type_hint) {

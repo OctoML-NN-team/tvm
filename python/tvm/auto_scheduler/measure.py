@@ -1049,6 +1049,8 @@ def _timed_rpc_run(
         remote.upload(build_res.filename)
         func = remote.load_module(os.path.split(build_res.filename)[1])
         ctx = remote.context(str(inp.task.target), 0)
+        stream = ctx.create_stream()
+        ctx.set_stream(stream)
         # Limitation:
         # We can not get PackFunction directly in the remote mode as it is wrapped
         # under the std::function. We could lift the restriction later once we fold
@@ -1096,17 +1098,17 @@ def _timed_rpc_run(
                         )
                 else:
                     empty_array = ndarray.empty(get_const_tuple(arg.shape), arg.dtype, ctx)
-                    random_fill(empty_array)
+                    random_fill(empty_array, stream)
                     args.append(empty_array)
             if task_inputs_count != len(task_input_names):
                 logger.warning(
                     "task_inputs not fully matched, check if there's any unexpected error"
                 )
-            ctx.sync()
+            ctx.sync(stream)
 
             # First run for check that the kernel is correct
             func.entry_func(*args)
-            ctx.sync()
+            ctx.sync(stream)
 
             costs = time_f(*args).results
 

@@ -50,17 +50,8 @@ namespace metal {
  */
 class MetalWorkspace final : public DeviceAPI {
  public:
-  struct Queue {
-    Queue(id<MTLCommandQueue> queue) : queue_(queue), error_happened_(false) {}
-    // Queue
-    id<MTLCommandQueue> queue_;
-    // Check if error happened in one previous run
-    mutable bool error_happened_ = false;
-  };
   // the devices
   std::vector<id<MTLDevice> > devices;
-  // the queues
-  std::vector<Queue> queues;
   // Warp size constant
   std::vector<int> warp_size;
   // Whether it is initialized.
@@ -69,17 +60,6 @@ class MetalWorkspace final : public DeviceAPI {
   std::mutex mutex;
   // Destructor
   ~MetalWorkspace();
-  // Get command queue for given context.
-  Queue GetCommandQueue(TVMContext ctx) {
-    ICHECK_EQ(ctx.device_type, kDLMetal);
-    ICHECK(ctx.device_id >= 0 && static_cast<size_t>(ctx.device_id) < queues.size())
-        << "Invalid Metal device_id=" << ctx.device_id;
-    ICHECK(queues[ctx.device_id].error_happened_ != true)
-        << "Error! You are trying to get queue there error happened";
-    return queues[ctx.device_id];
-  }
-  // Update command queue for given context.
-  void UpdateCommandQueues();
   // Get device for given context
   id<MTLDevice> GetDevice(TVMContext ctx) {
     ICHECK_EQ(ctx.device_type, kDLMetal);
@@ -95,13 +75,12 @@ class MetalWorkspace final : public DeviceAPI {
   void GetAttr(TVMContext ctx, DeviceAttrKind kind, TVMRetValue* rv) final;
   void* AllocDataSpace(TVMContext ctx, size_t nbytes, size_t alignment, DLDataType type_hint) final;
   void FreeDataSpace(TVMContext ctx, void* ptr) final;
+  TVMStreamHandle CreateStream(TVMContext ctx) final;
+  void FreeStream(TVMContext ctx, TVMStreamHandle stream) final;
   void StreamSync(TVMContext ctx, TVMStreamHandle stream) final;
+  void SetStream(TVMContext ctx, TVMStreamHandle stream) final;
   void* AllocWorkspace(TVMContext ctx, size_t size, DLDataType type_hint) final;
   void FreeWorkspace(TVMContext ctx, void* data) final;
-  void SetErrorStatus(size_t dev_id, bool error_happened) {
-    std::lock_guard<std::mutex> lock(this->mutex);
-    queues[dev_id].error_happened_ = error_happened;
-  }
 
   // get the global workspace
   static MetalWorkspace* Global();
@@ -115,8 +94,16 @@ class MetalWorkspace final : public DeviceAPI {
 /*! \brief Thread local workspace */
 class MetalThreadEntry {
  public:
+  struct Queue {
+    Queue(id<MTLCommandQueue> queue) : queue_(queue), error_happened_(false) {}
+    // Queue
+    id<MTLCommandQueue> queue_;
+    // Check if error happened in one previous run
+    mutable bool error_happened_ = false;
+  };
   /*! \brief The current context */
   TVMContext context;
+  Queue* stream;
   /*! \brief The shared buffer used for copy. */
   std::vector<id<MTLBuffer> > temp_buffer_;
   /*! \brief workspace pool */

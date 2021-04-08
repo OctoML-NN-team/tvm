@@ -128,7 +128,10 @@ TVM_REGISTER_GLOBAL("tvm.contrib.random.random_fill").set_body([](TVMArgs args, 
   TRACE_REGION(_dmn_rnd, "random_fill");
   RandomThreadLocalEntry* entry = RandomThreadLocalEntry::ThreadLocal();
   DLTensor* out = args[0];
-  entry->random_engine.RandomFill(out);
+  TVMStreamHandle stream = nullptr;
+  if (args.size() > 1)
+    stream = args[1];
+  entry->random_engine.RandomFill(out, stream);
 });
 
 }  // namespace contrib

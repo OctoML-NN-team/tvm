@@ -184,8 +184,9 @@ class MetalWrappedFunc {
   void operator()(TVMArgs args, TVMRetValue* rv, const ArgUnion64* pack_args) const {
     @autoreleasepool {
       metal::MetalThreadEntry* t = metal::MetalThreadEntry::ThreadLocal();
-      auto queue = w_->GetCommandQueue(t->context);
-      std::cout << "MetalWrappedFunc::Operator(), queue.err: " << queue.error_happened_ << std::endl;
+      ICHECK(t->stream != nullptr);
+      __block auto queue = static_cast<metal::MetalThreadEntry::Queue*>(t->stream);
+      if (queue->error_happened_) return;
       int device_id = t->context.device_id;
       if (scache_[device_id] == nil) {
         scache_[device_id] = m_->GetPipelineState(device_id, func_name_);
@@ -194,11 +195,10 @@ class MetalWrappedFunc {
       int blockSize = wl.block_dim(0) * wl.block_dim(1) * wl.block_dim(2);
       auto maxTotalThreadsPerThreadgroup = scache_[device_id].maxTotalThreadsPerThreadgroup;
       CHECK_LE(blockSize, maxTotalThreadsPerThreadgroup);
-      id<MTLCommandBuffer> cb = [queue.queue_ commandBuffer];
+      id<MTLCommandBuffer> cb = [queue->queue_ commandBuffer];
       [cb addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
         if (buffer.status == MTLCommandBufferStatusError) {
-          w_->SetErrorStatus(device_id, true);
-          std::cout << "ERROR HANDLED" << std::endl;
+          queue->error_happened_ = true;
         }
       }];
       id<MTLComputeCommandEncoder> encoder = [cb computeCommandEncoder];
@@ -259,11 +259,8 @@ PackedFunc MetalModuleNode::GetFunction(const std::string& name,
 
 Module MetalModuleCreate(std::string data, std::string fmt,
                          std::unordered_map<std::string, FunctionInfo> fmap, std::string source) {
-    std::cout << "MetalModuleCreate" << std::endl;
   @autoreleasepool {
-    auto workspace = metal::MetalWorkspace::Global();
-    workspace->Init();
-    workspace->UpdateCommandQueues();
+    metal::MetalWorkspace::Global()->Init();
     auto n = make_object<MetalModuleNode>(data, fmt, fmap, source);
     return Module(n);
   }

@@ -935,6 +935,24 @@ void RPCCopyAmongRemote(RPCSession* handler, TVMArgs args, TVMRetValue* rv) {
   handler->GetDeviceAPI(ctx)->CopyDataFromTo(from, to, stream);
 }
 
+void RPCDevCreateStream(RPCSession* handler, TVMArgs args, TVMRetValue* rv) {
+  TVMContext ctx = args[0];
+  void* data = handler->GetDeviceAPI(ctx)->CreateStream(ctx);
+  *rv = data;
+}
+
+void RPCDevFreeStream(RPCSession* handler, TVMArgs args, TVMRetValue* rv) {
+  TVMContext ctx = args[0];
+  TVMStreamHandle stream = args[1];
+  handler->GetDeviceAPI(ctx)->FreeStream(ctx, stream);
+}
+
+void RPCDevSetStream(RPCSession* handler, TVMArgs args, TVMRetValue* rv) {
+  TVMContext ctx = args[0];
+  TVMStreamHandle stream = args[1];
+  handler->GetDeviceAPI(ctx)->SetStream(ctx, stream);
+}
+
 void RPCEndpoint::EventHandler::HandleSyscall(RPCCode code) {
   // Event handler sit at clean state at this point.
   switch (code) {
@@ -960,8 +978,17 @@ void RPCEndpoint::EventHandler::HandleSyscall(RPCCode code) {
     case RPCCode::kDevFreeData:
       SysCallHandler(RPCDevFreeData);
       break;
+    case RPCCode::kDevCreateStream:
+      SysCallHandler(RPCDevCreateStream);
+      break;
+    case RPCCode::kDevFreeStream:
+      SysCallHandler(RPCDevFreeStream);
+      break;
     case RPCCode::kDevStreamSync:
       this->HandleSyscallStreamSync();
+      break;
+    case RPCCode::kDevSetStream:
+      SysCallHandler(RPCDevSetStream);
       break;
     case RPCCode::kCopyAmongRemote:
       SysCallHandler(RPCCopyAmongRemote);
@@ -1049,8 +1076,20 @@ class RPCClientSession : public RPCSession, public DeviceAPI {
     endpoint_->SysCallRemote(RPCCode::kCopyAmongRemote, from, to, stream);
   }
 
+  TVMStreamHandle CreateStream(TVMContext ctx) final {
+    return endpoint_->SysCallRemote(RPCCode::kDevCreateStream, ctx);
+  }
+
+  void FreeStream(TVMContext ctx, TVMStreamHandle stream) final {
+    endpoint_->SysCallRemote(RPCCode::kDevFreeStream, ctx, stream);
+  }
+
   void StreamSync(TVMContext ctx, TVMStreamHandle stream) final {
     endpoint_->SysCallRemote(RPCCode::kDevStreamSync, ctx, stream);
+  }
+
+  void SetStream(TVMContext ctx, TVMStreamHandle stream) final {
+    endpoint_->SysCallRemote(RPCCode::kDevSetStream, ctx, stream);
   }
 
   DeviceAPI* GetDeviceAPI(TVMContext ctx, bool allow_missing) final { return this; }
