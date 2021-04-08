@@ -38,18 +38,6 @@ MetalWorkspace* MetalWorkspace::Global() {
   }
 }
 
-void MetalWorkspace::UpdateCommandQueues() {
-  ICHECK_EQ(queues.size(), devices.size());
-  for (size_t i = 0; i < queues.size(); ++i) {
-    if (!queues[i].error_happened_) continue;
-    id<MTLCommandQueue> queue = [devices[i] newCommandQueue];
-    ICHECK(queue != nil);
-    [queues[i].queue_ release];
-    queues[i].queue_ = queue;
-    queues[i].error_happened_ = false;
-  }
-}
-
 void MetalWorkspace::GetAttr(Device dev, DeviceAttrKind kind, TVMRetValue* rv) {
   @autoreleasepool {
     this->Init();
@@ -133,9 +121,6 @@ MetalWorkspace::~MetalWorkspace() {
   for (auto x : devices) {
     [x release];
   }
-  for (auto x : queues) {
-    [x.queue_ release];
-  }
 }
 
 void MetalWorkspace::Init() {
@@ -148,13 +133,11 @@ void MetalWorkspace::Init() {
   // on iPhone
   id<MTLDevice> d = MTLCreateSystemDefaultDevice();
   devices.push_back(d);
-  queues.push_back([d newCommandQueue]);
 #else
   NSArray<id<MTLDevice> >* devs = MTLCopyAllDevices();
   for (size_t i = 0; i < devs.count; ++i) {
     id<MTLDevice> d = [devs objectAtIndex:i];
     devices.push_back(d);
-    queues.push_back([d newCommandQueue]);
     LOG(INFO) << "Intializing Metal device " << i << ", name=" << [d.name UTF8String];
     warp_size.push_back(GetWarpSize(d));
   }
@@ -200,14 +183,15 @@ void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* 
                                     DLDataType type_hint, TVMStreamHandle stream) {
   @autoreleasepool {
     this->Init();
-    ICHECK(stream == nullptr);
+    ICHECK(stream != nullptr);
     Device dev = dev_from;
+    __block MetalThreadEntry::Queue* queue = static_cast<MetalThreadEntry::Queue*>(stream);
+    if (queue->error_happened_) return;
     if (dev_from.device_type == kDLCPU) dev = dev_to;
-    Queue queue = GetCommandQueue(dev);
-    id<MTLCommandBuffer> cb = [queue.queue_ commandBuffer];
+    id<MTLCommandBuffer> cb = [queue->queue_ commandBuffer];
     [cb addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
       if (buffer.status == MTLCommandBufferStatusError) {
-        SetErrorStatus(dev.device_id, true);
+        queue->error_happened_ = true;
       }
     }];
     int from_dev_type = static_cast<int>(dev_from.device_type);
@@ -266,18 +250,34 @@ void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* 
   }
 }
 
+TVMStreamHandle MetalWorkspace::CreateStream(Device dev) {
+  MetalThreadEntry::Queue* queue =
+      new MetalThreadEntry::Queue([devices[dev.device_id] newCommandQueue]);
+  return static_cast<TVMStreamHandle>(queue);
+}
+
+void MetalWorkspace::FreeStream(Device dev, TVMStreamHandle stream) {
+  if (stream == nullptr) return;
+  MetalThreadEntry::Queue* queue = static_cast<MetalThreadEntry::Queue*>(stream);
+  delete queue;
+}
+
 void MetalWorkspace::StreamSync(Device dev, TVMStreamHandle stream) {
   @autoreleasepool {
-    ICHECK(stream == nullptr);
+    ICHECK(stream != nullptr);
+    __block MetalThreadEntry::Queue* queue = static_cast<MetalThreadEntry::Queue*>(stream);
     // commit an empty command buffer and wait until it completes.
-    Queue queue = GetCommandQueue(dev);
-    id<MTLCommandBuffer> cb = [queue.queue_ commandBuffer];
+    id<MTLCommandBuffer> cb = [queue->queue_ commandBuffer];
     [cb commit];
     [cb waitUntilCompleted];
-    if (cb.status == MTLCommandBufferStatusError) {
+    if (cb.status == MTLCommandBufferStatusError || queue->error_happened_) {
       LOG(FATAL) << "Error! Some problems on GPU happaned!";
     }
   }
+}
+
+void MetalWorkspace::SetStream(Device dev, TVMStreamHandle stream) {
+  MetalThreadEntry::ThreadLocal()->stream = static_cast<MetalThreadEntry::Queue*>(stream);
 }
 
 void* MetalWorkspace::AllocWorkspace(Device dev, size_t size, DLDataType type_hint) {
@@ -286,11 +286,6 @@ void* MetalWorkspace::AllocWorkspace(Device dev, size_t size, DLDataType type_hi
 
 void MetalWorkspace::FreeWorkspace(Device dev, void* data) {
   MetalThreadEntry::ThreadLocal()->pool.FreeWorkspace(dev, data);
-}
-
-void MetalWorkspace::SetErrorStatus(size_t dev_id, bool error_happened) {
-  std::lock_guard<std::mutex> lock(this->mutex);
-  queues[dev_id].error_happened_ = error_happened;
 }
 
 MetalThreadEntry::~MetalThreadEntry() {

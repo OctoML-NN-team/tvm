@@ -50,17 +50,8 @@ namespace metal {
  */
 class MetalWorkspace final : public DeviceAPI {
  public:
-  struct Queue {
-    Queue(id<MTLCommandQueue> queue) : queue_(queue), error_happened_(false) {}
-    // Queue
-    id<MTLCommandQueue> queue_;
-    // Check if error happened in one previous run
-    bool error_happened_ = false;
-  };
   // the devices
   std::vector<id<MTLDevice> > devices;
-  // the queues
-  std::vector<Queue> queues;
   // Warp size constant
   std::vector<int> warp_size;
   // Whether it is initialized.
@@ -69,17 +60,6 @@ class MetalWorkspace final : public DeviceAPI {
   std::mutex mutex;
   // Destructor
   ~MetalWorkspace();
-  // Get command queue for given device.
-  Queue GetCommandQueue(Device dev) {
-    ICHECK_EQ(dev.device_type, kDLMetal);
-    ICHECK(dev.device_id >= 0 && static_cast<size_t>(dev.device_id) < queues.size())
-        << "Invalid Metal device_id=" << dev.device_id;
-    ICHECK(queues[dev.device_id].error_happened_ != true)
-        << "Error! You are trying to get queue there error happened";
-    return queues[dev.device_id];
-  }
-  // Update command queue for given context.
-  void UpdateCommandQueues();
   // Get device for given device
   id<MTLDevice> GetDevice(Device dev) {
     ICHECK_EQ(dev.device_type, kDLMetal);
@@ -95,10 +75,12 @@ class MetalWorkspace final : public DeviceAPI {
   void GetAttr(Device dev, DeviceAttrKind kind, TVMRetValue* rv) final;
   void* AllocDataSpace(Device dev, size_t nbytes, size_t alignment, DLDataType type_hint) final;
   void FreeDataSpace(Device dev, void* ptr) final;
+  TVMStreamHandle CreateStream(Device dev) final;
+  void FreeStream(Device dev, TVMStreamHandle stream) final;
   void StreamSync(Device dev, TVMStreamHandle stream) final;
+  void SetStream(Device dev, TVMStreamHandle stream) final;
   void* AllocWorkspace(Device dev, size_t size, DLDataType type_hint) final;
   void FreeWorkspace(Device dev, void* data) final;
-  void SetErrorStatus(size_t dev_id, bool error_happened);
 
   // get the global workspace
   static MetalWorkspace* Global();
@@ -112,8 +94,17 @@ class MetalWorkspace final : public DeviceAPI {
 /*! \brief Thread local workspace */
 class MetalThreadEntry {
  public:
+  struct Queue {
+    Queue(id<MTLCommandQueue> queue) : queue_(queue), error_happened_(false) {}
+    // Queue
+    id<MTLCommandQueue> queue_;
+    // Check if error happened in one previous run
+    mutable bool error_happened_ = false;
+  };
   /*! \brief The current device */
   Device device;
+  /*! \brief The current queue */
+  Queue* stream;
   /*! \brief The shared buffer used for copy. */
   std::vector<id<MTLBuffer> > temp_buffer_;
   /*! \brief workspace pool */

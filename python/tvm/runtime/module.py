@@ -221,6 +221,7 @@ class Module(object):
                 repeat,
                 min_repeat_ms,
                 f_preproc,
+                dev.stream,
             )
 
             def evaluator(*args):
