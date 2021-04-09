@@ -45,6 +45,31 @@
 namespace tvm {
 namespace runtime {
 namespace metal {
+
+/*!
+ * \brief Structure for error handling in queues
+ */
+class Stream {
+ public:
+  Stream(id<MTLDevice> device) : error_happened_(false) { queue_ = [device newCommandQueue]; }
+  ~Stream() { [queue_ release]; }
+  id<MTLCommandBuffer> GetCommandBuffer() {
+    id<MTLCommandBuffer> cb = [queue_ commandBuffer];
+    [cb addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+      if (buffer.status == MTLCommandBufferStatusError) SetErrorStatus();
+    }];
+    return cb;
+  }
+  bool IsErrorHappened() { return error_happened_; }
+
+ private:
+  void SetErrorStatus() { error_happened_ = true; }
+  // Queue
+  id<MTLCommandQueue> queue_;
+  // Check if error happened in one previous run
+  bool error_happened_;
+};
+
 /*!
  * \brief Process global Metal workspace.
  */
@@ -89,21 +114,19 @@ class MetalWorkspace final : public DeviceAPI {
   void CopyDataFromTo(const void* from, size_t from_size, void* to, size_t to_size, size_t size,
                       TVMContext ctx_from, TVMContext ctx_to, DLDataType type_hint,
                       TVMStreamHandle stream) final;
+
+ private:
+  // Pointers to default allocated streams
+  std::vector<Stream*> default_streams_;
 };
 
 /*! \brief Thread local workspace */
 class MetalThreadEntry {
  public:
-  struct Queue {
-    Queue(id<MTLCommandQueue> queue) : queue_(queue), error_happened_(false) {}
-    // Queue
-    id<MTLCommandQueue> queue_;
-    // Check if error happened in one previous run
-    mutable bool error_happened_ = false;
-  };
   /*! \brief The current context */
   TVMContext context;
-  Queue* stream;
+  /*! \brief The current stream */
+  std::vector<Stream*> stream;
   /*! \brief The shared buffer used for copy. */
   std::vector<id<MTLBuffer> > temp_buffer_;
   /*! \brief workspace pool */

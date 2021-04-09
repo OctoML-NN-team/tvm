@@ -121,6 +121,9 @@ MetalWorkspace::~MetalWorkspace() {
   for (auto x : devices) {
     [x release];
   }
+  for (auto x : default_streams_) {
+    delete x;
+  }
 }
 
 void MetalWorkspace::Init() {
@@ -133,11 +136,17 @@ void MetalWorkspace::Init() {
   // on iPhone
   id<MTLDevice> d = MTLCreateSystemDefaultDevice();
   devices.push_back(d);
+  Stream* stream = new Stream(d);
+  MetalThreadEntry::ThreadLocal()->stream.push_back(stream);
+  default_streams_.push_back(stream);
 #else
   NSArray<id<MTLDevice> >* devs = MTLCopyAllDevices();
   for (size_t i = 0; i < devs.count; ++i) {
     id<MTLDevice> d = [devs objectAtIndex:i];
     devices.push_back(d);
+    Stream* stream = new Stream(d);
+    MetalThreadEntry::ThreadLocal()->stream.push_back(stream);
+    default_streams_.push_back(stream);
     LOG(INFO) << "Intializing Metal device " << i << ", name=" << [d.name UTF8String];
     warp_size.push_back(GetWarpSize(d));
   }
@@ -184,17 +193,17 @@ void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* 
                                     TVMStreamHandle stream) {
   @autoreleasepool {
     this->Init();
-    ICHECK(stream != nullptr);
     TVMContext ctx = ctx_from;
-    __block MetalThreadEntry::Queue* queue = static_cast<MetalThreadEntry::Queue*>(stream);
-    if (queue->error_happened_) return;
+    Stream* s;
+    if (stream != nullptr)
+      s = static_cast<Stream*>(stream);
+    else
+      s = MetalThreadEntry::ThreadLocal()->stream[ctx.device_id];
+    if (s->IsErrorHappened()) {
+      LOG(FATAL) << "Error! Some problems on GPU happaned! Cannot copy data to current stream";
+    }
     if (ctx_from.device_type == kDLCPU) ctx = ctx_to;
-    id<MTLCommandBuffer> cb = [queue->queue_ commandBuffer];
-    [cb addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
-      if (buffer.status == MTLCommandBufferStatusError) {
-        queue->error_happened_ = true;
-      }
-    }];
+    id<MTLCommandBuffer> cb = s->GetCommandBuffer();
     int from_dev_type = static_cast<int>(ctx_from.device_type);
     int to_dev_type = static_cast<int>(ctx_to.device_type);
 
@@ -252,33 +261,35 @@ void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* 
 }
 
 TVMStreamHandle MetalWorkspace::CreateStream(TVMContext ctx) {
-  MetalThreadEntry::Queue* queue =
-      new MetalThreadEntry::Queue([devices[ctx.device_id] newCommandQueue]);
-  return static_cast<TVMStreamHandle>(queue);
+  Stream* stream = new Stream(devices[ctx.device_id]);
+  return static_cast<TVMStreamHandle>(stream);
 }
 
 void MetalWorkspace::FreeStream(TVMContext ctx, TVMStreamHandle stream) {
-  if (stream == nullptr) return;
-  MetalThreadEntry::Queue* queue = static_cast<MetalThreadEntry::Queue*>(stream);
-  delete queue;
+  ICHECK(stream != nullptr);
+  Stream* s = static_cast<Stream*>(stream);
+  delete s;
 }
 
 void MetalWorkspace::StreamSync(TVMContext ctx, TVMStreamHandle stream) {
   @autoreleasepool {
-    ICHECK(stream != nullptr);
-    __block MetalThreadEntry::Queue* queue = static_cast<MetalThreadEntry::Queue*>(stream);
+    Stream* s;
+    if (stream != nullptr)
+      s = static_cast<Stream*>(stream);
+    else
+      s = MetalThreadEntry::ThreadLocal()->stream[ctx.device_id];
     // commit an empty command buffer and wait until it completes.
-    id<MTLCommandBuffer> cb = [queue->queue_ commandBuffer];
+    id<MTLCommandBuffer> cb = s->GetCommandBuffer();
     [cb commit];
     [cb waitUntilCompleted];
-    if (cb.status == MTLCommandBufferStatusError || queue->error_happened_) {
+    if (s->IsErrorHappened()) {
       LOG(FATAL) << "Error! Some problems on GPU happaned!";
     }
   }
 }
 
 void MetalWorkspace::SetStream(TVMContext ctx, TVMStreamHandle stream) {
-  MetalThreadEntry::ThreadLocal()->stream = static_cast<MetalThreadEntry::Queue*>(stream);
+  MetalThreadEntry::ThreadLocal()->stream[ctx.device_id] = static_cast<Stream*>(stream);
 }
 
 void* MetalWorkspace::AllocWorkspace(TVMContext ctx, size_t size, DLDataType type_hint) {

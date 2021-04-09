@@ -274,7 +274,7 @@ class TVMContext(ctypes.Structure):
         check_call(_LIB.TVMStreamFree(self.device_type, self.device_id, stream))
 
     def set_stream(self, stream):
-        """Free a created stream handle."""
+        """Set a created stream handle."""
         self.stream = stream
         check_call(_LIB.TVMSetStream(self.device_type, self.device_id, stream))
 
