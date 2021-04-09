@@ -1054,8 +1054,6 @@ def _timed_rpc_run(
         remote.upload(build_res.filename)
         func = remote.load_module(os.path.split(build_res.filename)[1])
         dev = remote.device(str(inp.task.target), 0)
-        stream = dev.create_stream()
-        dev.set_stream(stream)
         # Limitation:
         # We can not get PackFunction directly in the remote mode as it is wrapped
         # under the std::function. We could lift the restriction later once we fold
@@ -1078,6 +1076,8 @@ def _timed_rpc_run(
 
     if error_no == 0:
         try:
+            stream = dev.create_stream()
+            dev.set_stream(stream)
             random_fill = remote.get_function("tvm.contrib.random.random_fill")
             assert (
                 random_fill
@@ -1103,17 +1103,17 @@ def _timed_rpc_run(
                         )
                 else:
                     empty_array = ndarray.empty(get_const_tuple(arg.shape), arg.dtype, dev)
-                    random_fill(empty_array, stream)
+                    random_fill(empty_array)
                     args.append(empty_array)
             if task_inputs_count != len(task_input_names):
                 logger.warning(
                     "task_inputs not fully matched, check if there's any unexpected error"
                 )
-            dev.sync(stream)
+            dev.sync()
 
             # First run for check that the kernel is correct
             func.entry_func(*args)
-            dev.sync(stream)
+            dev.sync()
 
             costs = time_f(*args).results
 
@@ -1126,6 +1126,8 @@ def _timed_rpc_run(
             costs = (MAX_FLOAT,)
             error_no = MeasureErrorNo.RUNTIME_DEVICE
             error_msg = make_traceback_info()
+        finally:
+            dev.free_stream(stream)
 
     shutil.rmtree(os.path.dirname(build_res.filename))
     toc = time.time()

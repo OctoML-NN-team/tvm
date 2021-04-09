@@ -115,7 +115,7 @@ class RandomEngine {
     }
   }
 
-  void RandomFill(DLTensor* data, TVMStreamHandle stream) {
+  void RandomFill(DLTensor* data) {
     int64_t size = 1;
     for (int i = 0; i < data->ndim; ++i) {
       size *= data->shape[i];
@@ -128,7 +128,7 @@ class RandomEngine {
           std::vector<int64_t>{data->shape, data->shape + data->ndim}, data->dtype, {kDLCPU, 0});
       DLTensor* tensor = const_cast<DLTensor*>(local.operator->());
       FillData(tensor, size);
-      runtime::NDArray::CopyFromTo(tensor, data, stream);
+      runtime::NDArray::CopyFromTo(tensor, data);
     }
   }
 

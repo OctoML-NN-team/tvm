@@ -195,7 +195,6 @@ class Device(ctypes.Structure):
         super(Device, self).__init__()
         self.device_type = int(device_type)
         self.device_id = device_id
-        self.stream = None
 
     def _GetDeviceAttr(self, device_type, device_id, attr_id):
         """Internal helper function to invoke runtime.GetDeviceAttr"""
@@ -274,8 +273,7 @@ class Device(ctypes.Structure):
         check_call(_LIB.TVMStreamFree(self.device_type, self.device_id, stream))
 
     def set_stream(self, stream):
-        """Free a created stream handle."""
-        self.stream = stream
+        """Set a created stream handle."""
         check_call(_LIB.TVMSetStream(self.device_type, self.device_id, stream))
 
     def sync(self, stream=None):

@@ -120,10 +120,7 @@ TVM_REGISTER_GLOBAL("tvm.contrib.random.normal").set_body([](TVMArgs args, TVMRe
 TVM_REGISTER_GLOBAL("tvm.contrib.random.random_fill").set_body([](TVMArgs args, TVMRetValue* ret) {
   RandomThreadLocalEntry* entry = RandomThreadLocalEntry::ThreadLocal();
   DLTensor* out = args[0];
-  TVMStreamHandle stream = nullptr;
-  if (args.size() > 1)
-    stream = args[1];
-  entry->random_engine.RandomFill(out, stream);
+  entry->random_engine.RandomFill(out);
 });
 
 }  // namespace contrib
