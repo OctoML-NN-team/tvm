@@ -32,6 +32,7 @@
 #include "../pack_args.h"
 #include "../thread_storage_scope.h"
 #include "metal_common.h"
+#include <fstream>
 
 namespace tvm {
 namespace runtime {
@@ -83,6 +84,15 @@ class MetalModuleNode final : public runtime::ModuleNode {
     DeviceEntry& e = finfo_[device_id];
     auto it = e.smap.find(func_name);
     if (it != e.smap.end()) return it->second;
+
+    // drop to the file
+    std::string kfname = "outputs/" + func_name + ".txt";
+    std::ofstream fdump(kfname.c_str());
+    fdump << "-------------------------------------------------------------------------------------" << std::endl;
+    fdump << func_name << std::endl;
+    fdump << data_.c_str()  << std::endl;
+    fdump.close();
+
     // compile
     NSError* err_msg = nil;
     if (e.lib == nil) {
@@ -119,6 +129,8 @@ class MetalModuleNode final : public runtime::ModuleNode {
     ICHECK(f != nil) << "cannot find function " << func_name;
     id<MTLComputePipelineState> state =
         [w->devices[device_id] newComputePipelineStateWithFunction:f error:&err_msg];
+    std::cout << func_name << "     maxTotalThreadsPerThreadgroup: " << state. maxTotalThreadsPerThreadgroup
+              << "  threadExecutionWidth: " << state.threadExecutionWidth << std::endl;
     ICHECK(state != nil) << "cannot get state:"
                          << " for function " << func_name
                          << [[err_msg localizedDescription] UTF8String];
@@ -191,6 +203,15 @@ class MetalWrappedFunc {
       ThreadWorkLoad wl = thread_axis_cfg_.Extract(args);
       int blockSize = wl.block_dim(0) * wl.block_dim(1) * wl.block_dim(2);
       auto maxTotalThreadsPerThreadgroup = scache_[device_id].maxTotalThreadsPerThreadgroup;
+      std::cout << func_name_ << " gridDim: (";
+      for (size_t k = 0; k < 3; k++) {
+        std::cout << wl.grid_dim(k) << ",";
+      }
+      std::cout << ") blockDim: (";
+      for (size_t k = 0; k < 3; k++) {
+        std::cout << wl.block_dim(k) << ",";
+      }
+      std::cout << ") " << std::endl;
       CHECK_LE(blockSize, maxTotalThreadsPerThreadgroup);
       id<MTLCommandQueue> queue = w_->GetCommandQueue(t->device);
       id<MTLCommandBuffer> cb = [queue commandBuffer];

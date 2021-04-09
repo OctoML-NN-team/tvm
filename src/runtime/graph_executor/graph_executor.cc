@@ -37,6 +37,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <fstream>
 
 #include "../file_utils.h"
 
@@ -55,8 +56,56 @@ inline size_t GetDataAlignment(const DLTensor& arr) {
  */
 void GraphExecutor::Run() {
   // setup the array and requirements.
-  for (size_t i = 0; i < op_execs_.size(); ++i) {
-    if (op_execs_[i]) op_execs_[i]();
+  DLContext ctx {kDLMetal, 0};
+  DLContext ctxCPU{kDLCPU, 0};
+  for (size_t i = 0; i < /*7*/ op_execs_.size(); ++i) {
+    if (op_execs_[i]) {
+      op_execs_[i]();
+      tvm::runtime::NDArray o = data_entry_[i];
+      std::string fname = "outputs/" + std::to_string(i) + ".txt";
+      std::ofstream d (fname);
+      auto shape = o.Shape();
+      d << "(";
+      size_t product = 1;
+      for (size_t s = 0; s < shape.size(); s++) {
+          d << shape[s] << ",";
+          product *= shape[s];
+      }
+      d << ")" << std::endl;
+      tvm::runtime::NDArray imd = tvm::runtime::NDArray::Empty(shape, DLDataType{kDLFloat, 32, 1}, ctxCPU);
+      imd.CopyFrom(o);
+      const float* oData = static_cast<float*>(imd->data);
+      TVMSynchronize(ctx.device_type, ctx.device_id, nullptr);
+      for (size_t idata = 0; idata < product; idata++) {
+          d << oData[idata] << std::endl;
+      }
+      fname = "outputs/" + std::to_string(i) + ".bin";
+      FILE* fdata = fopen(fname.c_str(), "wb");
+      fwrite(static_cast<float*>(imd->data), sizeof(float), product, fdata);
+      fclose(fdata);
+    } else {
+      tvm::runtime::NDArray o = data_entry_[i];
+      std::ofstream d ("outputs/" + std::to_string(i) + "_c.txt");
+      auto shape = o.Shape();
+      d << "(";
+      size_t product = 1;
+      for (size_t s = 0; s < shape.size(); s++) {
+          d << shape[s] << ",";
+          product *= shape[s];
+      }
+      d << ")" << std::endl;
+      tvm::runtime::NDArray imd = tvm::runtime::NDArray::Empty(shape, DLDataType{kDLFloat, 32, 1}, ctxCPU);
+      imd.CopyFrom(o);
+      const float* oData = static_cast<float*>(imd->data);
+      TVMSynchronize(ctx.device_type, ctx.device_id, nullptr);
+      for (size_t idata = 0; idata < product; idata++) {
+          d << oData[idata] << std::endl;
+      }
+      std::string fname = "outputs/" + std::to_string(i) + "_c.bin";
+      FILE* fdata = fopen(fname.c_str(), "wb");
+      fwrite(static_cast<float*>(imd->data), sizeof(float), product, fdata);
+      fclose(fdata);
+    }
   }
 }
 /*!
