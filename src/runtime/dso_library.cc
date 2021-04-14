@@ -30,6 +30,12 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+#elif defined(TVM_USE_CUSTOM_DL)
+#include <tvm_dlfcn.h>
+#define dlopen  tvm_dlopen
+#define dlerror tvm_dlerror
+#define dlclose tvm_dlclose
+#define dlsym   tvm_dlsym
 #else
 #include <dlfcn.h>
 #endif
