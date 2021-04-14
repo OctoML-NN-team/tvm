@@ -40,8 +40,8 @@ jobs:
         auto-activate-base: false
         use-only-tar-bz2: true
     - name: Check packages
-      if: startsWith(matrix.os, 'macOS')
-      shell: bash -l {0}
+      # if: startsWith(matrix.os, 'macOS')
+      # shell: bash -l {0}
       run: >-
         conda activate tvm-build
         python -m pytest -v tests/python/contrib/test_bnns/tmp.py
