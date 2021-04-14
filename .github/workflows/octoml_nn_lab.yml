@@ -13,7 +13,7 @@ jobs:
   Build:
     strategy:
       matrix:
-        os: [windows-2016, macOS-latest]
+        os: [macOS-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -39,6 +39,9 @@ jobs:
         environment-file: conda/build-environment.yaml
         auto-activate-base: false
         use-only-tar-bz2: true
+    - name: Extend Conda Env
+      run: |
+        conda install -n tvm-build -c conda-forge onnx
     - name: Conda info
       run: |
         conda info
