@@ -22,11 +22,14 @@ jobs:
       run: touch ~/.zshrc && cat ~/.zshrc
     - uses: actions/checkout@v2
     - name: Initialize submodules
-      run: git submodule update --recursive --init && pwd
+      run: git submodule update --recursive --init
     - name: Build from source
       run: |
-        pwd
-        pwd
+        mkdir build
+        cp cmake/config.cmake build
+        cd build
+        cmake ..
+        make -j12
     # - name: Lint Python
     #   if: startsWith(matrix.os, 'macOS')
     #   run: |
@@ -58,12 +61,12 @@ jobs:
       run: |
         conda info
         conda list
-    - name: Conda-Build@MacOS
-      if: startsWith(matrix.os, 'macOS')
-      shell: bash -l {0}
-      run: >-
-        conda build --output-folder=conda/pkg  conda/recipe &&
-        conda install tvm -c ./conda/pkg
+    # - name: Conda-Build@MacOS
+    #   if: startsWith(matrix.os, 'macOS')
+    #   shell: bash -l {0}
+    #   run: >-
+    #     conda build --output-folder=conda/pkg  conda/recipe &&
+    #     conda install tvm -c ./conda/pkg
     - name: Test@MacOS
       if: startsWith(matrix.os, 'macOS')
       shell: bash -l {0}
