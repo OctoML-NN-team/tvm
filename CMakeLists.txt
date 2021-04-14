@@ -593,3 +593,14 @@ if(APPLE AND TVM_IS_DEBUG_BUILD)
       VERBATIM
 		  )
 endif()
+
+# Use custom dynamic linker in case of iOS RPC
+if(${CMAKE_SYSTEM_NAME} STREQUAL "iOS" AND USE_RPC)
+  add_subdirectory(3rdparty/macho-dyld)
+endif()
+
+if(TARGET macho_dyld)
+  target_include_directories(tvm_runtime_objs PRIVATE "$<TARGET_PROPERTY:macho_dyld,INCLUDE_DIRECTORIES>")
+  target_compile_definitions(tvm_runtime_objs PRIVATE "TVM_USE_CUSTOM_DL")
+  target_link_libraries(tvm_runtime PRIVATE macho_dyld)
+endif()
