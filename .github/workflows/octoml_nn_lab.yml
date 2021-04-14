@@ -18,6 +18,8 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+    - name: check .zshrc
+      run: cat ~/.zshrc
     - uses: actions/checkout@v2
     - name: Initialize submodules
       run: git submodule update --recursive --init
