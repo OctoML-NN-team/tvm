@@ -41,7 +41,7 @@ jobs:
         use-only-tar-bz2: true
     - name: Extend Conda Env
       run: |
-        conda install -n tvm-build -c conda-forge onnx
+        conda install -n tvm-build -c conda-forge onnx --yes
     - name: Conda info
       run: |
         conda info
