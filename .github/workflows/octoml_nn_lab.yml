@@ -41,6 +41,13 @@ jobs:
     #     name: my-artifact
     #     path: tmp_artifact/world.zip
 
+    - name: Download artifact
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        workflow: octoml_nn_lab.yml
+        workflow_conclusion: success
+        name: my-artifact
+
     - name: Build from source
       run: |
         mkdir build
