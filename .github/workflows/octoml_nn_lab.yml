@@ -25,6 +25,9 @@ jobs:
       run: git submodule update --recursive --init
     - name: Set up .zshrc variables
       run: |
+        pwd
+        pwd
+        echo "tmp $(pwd)"
         echo "export TVM_HOME=$(pwd)" > ~/.zshrc
         echo "export PYTHONPATH=$TVM_HOME/python:${PYTHONPATH}" > ~/.zshrc
         cat ~/.zshrc
@@ -35,17 +38,6 @@ jobs:
         cd build
         cmake ..
         make -j12
-    # - name: Lint Python
-    #   if: startsWith(matrix.os, 'macOS')
-    #   run: |
-    #     python3 -m pip install flake8
-    #     python3 -m flake8 . --count --select=E9,F63,F7 --show-source --statistics
-    # - uses: actions/cache@v1
-    #   env:
-    #     CACHE_NUMBER: 0
-    #   with:
-    #     path: ~/conda_pkgs_dir
-    #     key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('conda/build-environment.yaml') }}
     - uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: tvm-build
@@ -53,25 +45,10 @@ jobs:
         environment-file: conda/build-environment.yaml
         auto-activate-base: false
         use-only-tar-bz2: true
-    # - name: Check packages
-    #   # if: startsWith(matrix.os, 'macOS')
-    #   shell: bash -l {0}
-    #   run: >-
-    #     conda activate tvm-build &&
-    #     python -m pytest -v tests/python/contrib/test_bnns/tmp.py
-    # # - name: Extend Conda Env
-      # run: |
-        # conda install -n tvm-build -c conda-forge onnx --yes
     - name: Conda info
       run: |
         conda info
         conda list
-    # - name: Conda-Build@MacOS
-    #   if: startsWith(matrix.os, 'macOS')
-    #   shell: bash -l {0}
-    #   run: >-
-    #     conda build --output-folder=conda/pkg  conda/recipe &&
-    #     conda install tvm -c ./conda/pkg
     - name: Test@MacOS
       if: startsWith(matrix.os, 'macOS')
       shell: bash -l {0}
