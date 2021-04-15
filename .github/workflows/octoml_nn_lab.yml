@@ -50,5 +50,6 @@ jobs:
       if: startsWith(matrix.os, 'macOS')
       shell: bash -l {0}
       run: >-
+        source ~/.zshrc &&
         conda activate tvm-build &&
         python -m pytest -v tests/python/contrib/test_bnns/test_onnx_topologies.py
