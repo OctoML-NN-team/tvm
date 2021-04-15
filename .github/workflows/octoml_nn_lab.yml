@@ -41,56 +41,34 @@ jobs:
     #     name: my-artifact
     #     path: tmp_artifact/world.zip
 
-    # - uses: actions/download-artifact@v2
-    #   with:
-    #     name: my-artifact
-    # - name: Display structure of downloaded files
-    #   run: ls -R
-
-    - name: Download artifact
+    - name: Build from source
       run: |
-        GET -h
-        ls
-        curl -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/OctoML-NN-team/tvm/actions/artifacts/54048044/zip
-        ls
-
-      # uses: dawidd6/action-download-artifact@v2
-      # with:
-      #   workflow: octoml_nn_lab.yml
-      #   workflow_conclusion: success
-
-    - name: download
+        mkdir build
+        cp cmake/config.cmake build
+        cd build
+        cmake ..
+        make -j12
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        activate-environment: tvm-build
+        channel-priority: strict
+        environment-file: conda/build-environment.yaml
+        auto-activate-base: false
+        use-only-tar-bz2: true
+    - name: Conda info
       run: |
-        ls
+        conda info
+        conda list
 
-    # - name: Build from source
-    #   run: |
-    #     mkdir build
-    #     cp cmake/config.cmake build
-    #     cd build
-    #     cmake ..
-    #     make -j12
-    # - uses: conda-incubator/setup-miniconda@v2
-    #   with:
-    #     activate-environment: tvm-build
-    #     channel-priority: strict
-    #     environment-file: conda/build-environment.yaml
-    #     auto-activate-base: false
-    #     use-only-tar-bz2: true
-    # - name: Conda info
-    #   run: |
-    #     conda info
-    #     conda list
-
-    # - name: Test tvm
-    #   run: |
-    #     source ~/.zshrc
-    #     python -c "import tvm"
+    - name: Test tvm
+      run: |
+        source ~/.zshrc
+        python -c "import tvm"
     
-    # - name: Test@MacOS
-    #   if: startsWith(matrix.os, 'macOS')
-    #   shell: bash -l {0}
-    #   run: >-
-    #     source ~/.zshrc &&
-    #     conda activate tvm-build &&
-    #     python -m pytest -v tests/python/contrib/test_bnns/test_onnx_topologies.py
+    - name: Test@MacOS
+      if: startsWith(matrix.os, 'macOS')
+      shell: bash -l {0}
+      run: >-
+        source ~/.zshrc &&
+        conda activate tvm-build &&
+        python -m pytest -v tests/python/contrib/test_bnns/test_onnx_topologies.py
