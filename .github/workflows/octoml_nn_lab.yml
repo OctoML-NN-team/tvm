@@ -28,10 +28,23 @@ jobs:
         echo "export TVM_HOME=$(pwd)" >> ~/.zshrc
         echo "export PYTHONPATH=$(pwd)/python:${PYTHONPATH}" >> ~/.zshrc
         cat ~/.zshrc
+
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        activate-environment: tvm-build
+        channel-priority: strict
+        environment-file: conda/build-environment.yaml
+        auto-activate-base: false
+        use-only-tar-bz2: true
+    - name: Conda info
+      run: |
+        conda info
+        conda list
     
     - name: Test tvm
       run: |
         source ~/.zshrc
+        python -V
         python -c "import tvm"
     
     # - name: Test artifact
@@ -60,17 +73,17 @@ jobs:
         cd build
         cmake ..
         make -j12
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        activate-environment: tvm-build
-        channel-priority: strict
-        environment-file: conda/build-environment.yaml
-        auto-activate-base: false
-        use-only-tar-bz2: true
-    - name: Conda info
-      run: |
-        conda info
-        conda list
+    # - uses: conda-incubator/setup-miniconda@v2
+    #   with:
+    #     activate-environment: tvm-build
+    #     channel-priority: strict
+    #     environment-file: conda/build-environment.yaml
+    #     auto-activate-base: false
+    #     use-only-tar-bz2: true
+    # - name: Conda info
+    #   run: |
+    #     conda info
+    #     conda list
 
     - name: Test tvm
       run: |
