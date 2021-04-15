@@ -41,11 +41,16 @@ jobs:
     #     name: my-artifact
     #     path: tmp_artifact/world.zip
 
-    - uses: actions/download-artifact@v2
-      with:
-        name: my-artifact
-    - name: Display structure of downloaded files
-      run: ls -R
+    # - uses: actions/download-artifact@v2
+    #   with:
+    #     name: my-artifact
+    # - name: Display structure of downloaded files
+    #   run: ls -R
+
+    - name: download
+      run: |
+        curl -o ./tmptmp -k "https://api.github.com/repos/OctoML-NN-team/tvm/actions/artifacts/54048044"
+        cat tmptmp
 
     # - name: Build from source
     #   run: |
