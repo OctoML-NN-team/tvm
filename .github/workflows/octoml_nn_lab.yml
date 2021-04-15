@@ -28,36 +28,38 @@ jobs:
         echo "export TVM_HOME=$(pwd)" >> ~/.zshrc
         echo "export PYTHONPATH=$(pwd)/python:${PYTHONPATH}" >> ~/.zshrc
         cat ~/.zshrc
-    - name: Test artifact
-      run: |
-        mkdir -p tmp_artifact
-        echo hello > tmp_artifact/world.txt
-    - uses: actions/upload-artifact@v2
-      with:
-        name: my-artifact
-        path: tmp_artifact/world.txt
-    - name: Build from source
-      run: |
-        mkdir build
-        cp cmake/config.cmake build
-        cd build
-        cmake ..
-        make -j12
+    # - name: Test artifact
+    #   run: |
+    #     mkdir -p tmp_artifact
+    #     echo hello > tmp_artifact/world.txt
+    # - uses: actions/upload-artifact@v2
+    #   with:
+    #     name: my-artifact
+    #     path: tmp_artifact/world.txt
+    
+    # - name: Build from source
+    #   run: |
+    #     mkdir build
+    #     cp cmake/config.cmake build
+    #     cd build
+    #     cmake ..
+    #     make -j12
+    # - uses: conda-incubator/setup-miniconda@v2
+    #   with:
+    #     activate-environment: tvm-build
+    #     channel-priority: strict
+    #     environment-file: conda/build-environment.yaml
+    #     auto-activate-base: false
+    #     use-only-tar-bz2: true
+    # - name: Conda info
+    #   run: |
+    #     conda info
+    #     conda list
+
     # - name: Test tvm
     #   run: |
     #     source ~/.zshrc
-    #     python3 -c "import tvm"
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        activate-environment: tvm-build
-        channel-priority: strict
-        environment-file: conda/build-environment.yaml
-        auto-activate-base: false
-        use-only-tar-bz2: true
-    - name: Conda info
-      run: |
-        conda info
-        conda list
+    #     python -c "import tvm"
     - name: Test@MacOS
       if: startsWith(matrix.os, 'macOS')
       shell: bash -l {0}
