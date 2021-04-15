@@ -47,9 +47,14 @@ jobs:
     # - name: Display structure of downloaded files
     #   run: ls -R
 
+    - name: Download artifact
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        workflow: ${{ github.event.workflow_run.workflow_id }}
+        workflow_conclusion: success
+
     - name: download
       run: |
-        get /repos/OctoML-NN-team/tvm/actions/artifacts
         ls
 
     # - name: Build from source
