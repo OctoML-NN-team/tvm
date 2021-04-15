@@ -35,6 +35,10 @@ jobs:
         cd build
         cmake ..
         make -j12
+    - name: Test tvm
+      run: |
+        source ~/.zshrc
+        python3 -c "import tvm"
     - uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: tvm-build
