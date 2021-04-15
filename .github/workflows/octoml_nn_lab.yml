@@ -49,8 +49,8 @@ jobs:
 
     - name: download
       run: |
-        curl -o ./tmptmp -k "https://api.github.com/repos/OctoML-NN-team/tvm/actions/artifacts/54048044"
-        cat tmptmp
+        get /repos/OctoML-NN-team/tvm/actions/artifacts
+        ls
 
     # - name: Build from source
     #   run: |
