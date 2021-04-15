@@ -48,10 +48,11 @@ jobs:
     #   run: ls -R
 
     - name: Download artifact
-      uses: dawidd6/action-download-artifact@v2
-      with:
-        workflow: octoml_nn_lab.yml
-        workflow_conclusion: success
+      run: gh run download
+      # uses: dawidd6/action-download-artifact@v2
+      # with:
+      #   workflow: octoml_nn_lab.yml
+      #   workflow_conclusion: success
 
     - name: download
       run: |
