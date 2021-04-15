@@ -49,8 +49,10 @@ jobs:
 
     - name: Download artifact
       run: |
+        GET -h
         ls
         curl -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/OctoML-NN-team/tvm/actions/artifacts/54048044/zip
+        ls
 
       # uses: dawidd6/action-download-artifact@v2
       # with:
