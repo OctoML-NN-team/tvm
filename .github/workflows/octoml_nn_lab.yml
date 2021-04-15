@@ -36,7 +36,14 @@ jobs:
     #   with:
     #     name: my-artifact
     #     path: tmp_artifact/world.txt
-    
+
+    - name: Download artifact
+    - uses: actions/download-artifact@v2
+      with:
+        name: my-artifact
+    - name: Display structure of downloaded files
+      run: ls -R
+
     # - name: Build from source
     #   run: |
     #     mkdir build
