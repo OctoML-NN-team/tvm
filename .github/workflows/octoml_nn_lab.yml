@@ -29,6 +29,11 @@ jobs:
         echo "export PYTHONPATH=$(pwd)/python:${PYTHONPATH}" >> ~/.zshrc
         cat ~/.zshrc
     
+    - name: Test tvm
+      run: |
+        source ~/.zshrc
+        python -c "import tvm"
+    
     # - name: Test artifact
     #   run: |
     #     mkdir -p tmp_artifact
