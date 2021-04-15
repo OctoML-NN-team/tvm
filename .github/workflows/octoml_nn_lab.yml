@@ -28,23 +28,24 @@ jobs:
         echo "export TVM_HOME=$(pwd)" >> ~/.zshrc
         echo "export PYTHONPATH=$(pwd)/python:${PYTHONPATH}" >> ~/.zshrc
         cat ~/.zshrc
-    - name: Test artifact
-      run: |
-        mkdir -p tmp_artifact
-        echo hello > tmp_artifact/world.txt
-        ls
-        zip "tmp_artifact/world.zip" tmp_artifact/world.txt
-        ls
-    - uses: actions/upload-artifact@v2
-      with:
-        name: my-artifact
-        path: tmp_artifact/world.zip
-
-    # - uses: actions/download-artifact@v2
+    
+    # - name: Test artifact
+    #   run: |
+    #     mkdir -p tmp_artifact
+    #     echo hello > tmp_artifact/world.txt
+    #     ls
+    #     zip "tmp_artifact/world.zip" tmp_artifact/world.txt
+    #     ls
+    # - uses: actions/upload-artifact@v2
     #   with:
     #     name: my-artifact
-    # - name: Display structure of downloaded files
-    #   run: ls -R
+    #     path: tmp_artifact/world.zip
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: my-artifact
+    - name: Display structure of downloaded files
+      run: ls -R
 
     # - name: Build from source
     #   run: |
