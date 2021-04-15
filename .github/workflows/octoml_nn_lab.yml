@@ -25,14 +25,8 @@ jobs:
       run: git submodule update --recursive --init
     - name: Set up .zshrc variables
       run: |
-        pwd
-        pwd
-        ls
-        echo "tmp $(pwd)"
-        echo "export TVM_HOME=$(pwd)" > ~/.zshrc
-        echo "export PYTHONPATH=$TVM_HOME/python:${PYTHONPATH}" > ~/.zshrc
-        echo "export TVM_HOME=/Users/runner/work/tvm/tvm" > ~/.zshrc
-        echo "export PYTHONPATH=/Users/runner/work/tvm/tvm/python:${PYTHONPATH}" > ~/.zshrc
+        echo "export TVM_HOME=$(pwd)" >> ~/.zshrc
+        echo "export PYTHONPATH=$TVM_HOME/python:${PYTHONPATH}" >> ~/.zshrc
         cat ~/.zshrc
     - name: Build from source
       run: |
