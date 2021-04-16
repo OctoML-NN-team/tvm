@@ -28,8 +28,8 @@ jobs:
     - name: conda info
       shell: bash -l {0}
       run: >-
-        conda activate tvm-build
-        
+        conda info --envs
+
     - uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: tvm-build
