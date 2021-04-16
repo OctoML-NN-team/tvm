@@ -28,10 +28,11 @@ jobs:
         echo "export TVM_HOME=$(pwd)" >> ~/.zshrc
         echo "export PYTHONPATH=$(pwd)/python:${PYTHONPATH}" >> ~/.zshrc
         cat ~/.zshrc
-        source ~/.zshrc
-        echo $PYTHONPATH
-        python3 -V
-        python3 -c "import tvm"
+
+        # source ~/.zshrc
+        # echo $PYTHONPATH
+        # python3 -V
+        # python3 -c "import tvm"
 
     - uses: conda-incubator/setup-miniconda@v2
       with:
@@ -48,6 +49,7 @@ jobs:
     - name: Test tvm
       run: |
         source ~/.zshrc
+        echo $PYTHONPATH
         python -V
         python -c "import tvm"
     
