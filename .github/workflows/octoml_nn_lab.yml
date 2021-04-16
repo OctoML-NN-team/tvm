@@ -27,7 +27,7 @@ jobs:
 
     - uses: conda-incubator/setup-miniconda@v2
       with:
-        activate-environment: tvm-build
+        activate-environment: tvm-build2
         channel-priority: strict
         environment-file: conda/build-environment.yaml
         auto-activate-base: false
