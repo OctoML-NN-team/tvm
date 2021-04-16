@@ -38,7 +38,7 @@ jobs:
 
     - name: Test@ONNX_MacOS
       run: |
-        conda activate tvm-build
+        # conda activate tvm-build
         python -V
         export PYTHONPATH=${TVM_HOME}/python:${PYTHONPATH}
         echo $PYTHONPATH
