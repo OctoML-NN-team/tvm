@@ -49,6 +49,7 @@ jobs:
     - name: Test tvm
       run: |
         source ~/.zshrc
+        export PYTHONPATH=/Users/runner/work/tvm/tvm/python:${PYTHONPATH}
         echo $PYTHONPATH
         python -V
         python -c "import tvm"
