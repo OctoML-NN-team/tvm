@@ -28,6 +28,7 @@ jobs:
         echo "export TVM_HOME=$(pwd)" >> ~/.zshrc
         echo "export PYTHONPATH=$(pwd)/python:${PYTHONPATH}" >> ~/.zshrc
         cat ~/.zshrc
+        source ~/.zshrc
         echo $PYTHONPATH
 
     - uses: conda-incubator/setup-miniconda@v2
