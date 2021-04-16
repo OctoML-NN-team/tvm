@@ -26,8 +26,10 @@ jobs:
       run: git submodule update --recursive --init
 
     - name: conda info
-      run: conda activate tvm-build
-
+      shell: bash -l {0}
+      run: >-
+        conda activate tvm-build
+        
     - uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: tvm-build
