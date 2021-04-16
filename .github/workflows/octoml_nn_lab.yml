@@ -30,6 +30,8 @@ jobs:
         cat ~/.zshrc
         source ~/.zshrc
         echo $PYTHONPATH
+        python -V
+        python -c "import tvm"
 
     - uses: conda-incubator/setup-miniconda@v2
       with:
