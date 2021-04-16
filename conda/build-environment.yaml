@@ -37,3 +37,4 @@ dependencies:
   - scipy
   - pillow
   - onnx
+  - decorator
