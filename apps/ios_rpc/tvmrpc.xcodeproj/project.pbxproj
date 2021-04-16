@@ -26,6 +26,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		01A7CF5726287C54008BFC80 /* libtvm_runtime.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 01A7CF5626287C54008BFC80 /* libtvm_runtime.dylib */; settings = {ATTRIBUTES = (Required, ); }; };
+		01A7CF6326287ED3008BFC80 /* libtvm_runtime.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 01A7CF5626287C54008BFC80 /* libtvm_runtime.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		C02637501F1C25E8007247A9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C026374F1F1C25E8007247A9 /* main.m */; };
 		C02637531F1C25E8007247A9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = C02637521F1C25E8007247A9 /* AppDelegate.m */; };
 		C02637591F1C25E8007247A9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C02637571F1C25E8007247A9 /* Main.storyboard */; };
@@ -47,7 +49,24 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		01A7CF6426287ED3008BFC80 /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				01A7CF6326287ED3008BFC80 /* libtvm_runtime.dylib in Embed Libraries */,
+			);
+			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		01A7CF2B262855B4008BFC80 /* rpc_server.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_server.h; sourceTree = "<group>"; };
+		01A7CF2D262855B4008BFC80 /* rpc_tracker_client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_tracker_client.h; sourceTree = "<group>"; };
+		01A7CF5626287C54008BFC80 /* libtvm_runtime.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtvm_runtime.dylib; path = "${TVM_BUILD_DIR}/libtvm_runtime.dylib"; sourceTree = "<group>"; };
 		C026374B1F1C25E8007247A9 /* tvmrpc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tvmrpc.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C026374F1F1C25E8007247A9 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		C02637511F1C25E8007247A9 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -71,6 +90,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				01A7CF5726287C54008BFC80 /* libtvm_runtime.dylib in Frameworks */,
 				D7685AD324390EAE00D1469C /* CoreML.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -109,12 +129,14 @@
 		C026374D1F1C25E8007247A9 /* tvmrpc */ = {
 			isa = PBXGroup;
 			children = (
-				C02637681F1C26AF007247A9 /* ViewController.mm */,
+				01A7CF2B262855B4008BFC80 /* rpc_server.h */,
+				01A7CF2D262855B4008BFC80 /* rpc_tracker_client.h */,
 				C02637671F1C269B007247A9 /* TVMRuntime.h */,
 				C02637651F1C2690007247A9 /* TVMRuntime.mm */,
+				C02637541F1C25E8007247A9 /* ViewController.h */,
+				C02637681F1C26AF007247A9 /* ViewController.mm */,
 				C02637511F1C25E8007247A9 /* AppDelegate.h */,
 				C02637521F1C25E8007247A9 /* AppDelegate.m */,
-				C02637541F1C25E8007247A9 /* ViewController.h */,
 				C02637571F1C25E8007247A9 /* Main.storyboard */,
 				C026375A1F1C25E8007247A9 /* Assets.xcassets */,
 				C026375C1F1C25E8007247A9 /* LaunchScreen.storyboard */,
@@ -144,6 +166,7 @@
 		D7685AD124390EAD00D1469C /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				01A7CF5626287C54008BFC80 /* libtvm_runtime.dylib */,
 				D7685AD224390EAD00D1469C /* CoreML.framework */,
 			);
 			name = Frameworks;
@@ -156,10 +179,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C02637621F1C25E8007247A9 /* Build configuration list for PBXNativeTarget "tvmrpc" */;
 			buildPhases = (
+				01A7CF69262880F4008BFC80 /* Check TVM prereguisites */,
 				C02637471F1C25E8007247A9 /* Sources */,
 				C02637481F1C25E8007247A9 /* Frameworks */,
 				C02637491F1C25E8007247A9 /* Resources */,
 				C05A2C901F1E683A00D4798B /* ShellScript */,
+				01A7CF6426287ED3008BFC80 /* Embed Libraries */,
 			);
 			buildRules = (
 			);
@@ -204,7 +229,7 @@
 					};
 					C05A2C851F1DCE0900D4798B = {
 						CreatedOnToolsVersion = 8.3.3;
-						DevelopmentTeam = 3FR42MXLK9;
+						DevelopmentTeam = KCTR727X9S;
 						ProvisioningStyle = Automatic;
 						TestTargetID = C026374A1F1C25E8007247A9;
 					};
@@ -215,6 +240,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 				Base,
 			);
@@ -250,6 +276,24 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		01A7CF69262880F4008BFC80 /* Check TVM prereguisites */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Check TVM prereguisites";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "tvm_runtime_name=\"libtvm_runtime.dylib\"\ntvm_runtime_lib_path=${TVM_BUILD_DIR}/${tvm_runtime_name}\n\n# Check existance\nif [ ! -f \"${tvm_runtime_lib_path}\" ]; then \n    echo \"error: Cannot find ${tvm_runtime_name} module. Double chek that\"\\\n         \"you built it and specified a path to it via TVM_BUILD_DIR xcode\"\\\n         \"user-defined variable.\"\n    exit 1\nfi\n\n# Check arch\ntvm_runtime_arch=`lipo -archs ${tvm_runtime_lib_path}`\nif [ \"${tvm_runtime_arch}\" != \"arm64\" ]; then\n    echo \"error: Provided ${tvm_runtime_name} module has incompatible terget\"\\\n         \"architecture. Expected: arm64, provided: ${tvm_runtime_arch}\"\n    exit 1\nfi\n\n# Check rpath\ntvm_runtime_install_name=`otool -D ${tvm_runtime_lib_path} | tail -1`\nif [ \"${tvm_runtime_install_name}\" != \"@rpath/${tvm_runtime_name}\" ]; then\n    echo \"error: Provided ${tvm_runtime_name} module has incompatible with\"\\\n         \"iosrpc application rpath. It should be @rpath/${tvm_runtime_name}.\"\\\n         \"You can use next command to inprove it:\"\\\n         \"install_name_tool -id \\\"@rpath/${tvm_runtime_name}\\\" ./${tvm_runtime_name}\"\n    exit 1\nfi\n\n# Check bitcode\ntvm_runtime_bitcode=`otool -l ${tvm_runtime_lib_path} | grep __LLVM`\nif [ \"${tvm_runtime_bitcode}\" == \"\" ]; then\n    echo \"error: Provided ${tvm_runtime_name} module has no embeded bitcode.\"\\\n         \"You should rebuilt it with using flag \\\"-fembed-bitcode-marker\\\".\"\\\n    exit 1\nfi\n";
+		};
 		C05A2C901F1E683A00D4798B /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -319,6 +363,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -358,11 +403,20 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"${TVM_ROOT}/include",
+					"${TVM_ROOT}/src",
+					"${TVM_ROOT}/3rdparty/dlpack/include",
+					"${TVM_ROOT}/3rdparty/dmlc-core/include",
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				LIBRARY_SEARCH_PATHS = "${TVM_BUILD_DIR}";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				TVM_BUILD_DIR = "../../cmake-build-debug-ios";
+				TVM_ROOT = ../..;
 			};
 			name = Debug;
 		};
@@ -370,6 +424,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -405,10 +460,19 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"${TVM_ROOT}/include",
+					"${TVM_ROOT}/src",
+					"${TVM_ROOT}/3rdparty/dlpack/include",
+					"${TVM_ROOT}/3rdparty/dmlc-core/include",
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				LIBRARY_SEARCH_PATHS = "${TVM_BUILD_DIR}";
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				TVM_BUILD_DIR = "../../cmake-build-debug-ios";
+				TVM_ROOT = ../..;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -421,11 +485,6 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				DEVELOPMENT_TEAM = 3FR42MXLK9;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				HEADER_SEARCH_PATHS = (
-					../../include,
-					../../3rdparty/dlpack/include,
-					"../../3rdparty/dmlc-core/include",
-				);
 				INFOPLIST_FILE = tvmrpc/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = org.apache.tvmrpc;
@@ -441,11 +500,6 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				DEVELOPMENT_TEAM = 3FR42MXLK9;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				HEADER_SEARCH_PATHS = (
-					../../include,
-					../../3rdparty/dlpack/include,
-					"../../3rdparty/dmlc-core/include",
-				);
 				INFOPLIST_FILE = tvmrpc/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = org.apache.tvmrpc;
@@ -458,11 +512,6 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = 3FR42MXLK9;
-				HEADER_SEARCH_PATHS = (
-					../../3rdparty/dlpack/include,
-					../../include,
-					"../../3rdparty/dmlc-core/include",
-				);
 				INFOPLIST_FILE = tvmrpcLauncher/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = org.apache.tvmrpcLauncher;
@@ -476,11 +525,6 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = 3FR42MXLK9;
-				HEADER_SEARCH_PATHS = (
-					../../3rdparty/dlpack/include,
-					../../include,
-					"../../3rdparty/dmlc-core/include",
-				);
 				INFOPLIST_FILE = tvmrpcLauncher/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = org.apache.tvmrpcLauncher;

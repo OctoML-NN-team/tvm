@@ -24,25 +24,15 @@
 #import <UIKit/UIKit.h>
 #include "TVMRuntime.h"
 
-@interface ViewController : UIViewController <NSStreamDelegate> {
-  // input socket stream
-  NSInputStream* inputStream_;
-  // output socket stream
-  NSOutputStream* outputStream_;
-  // temporal receive buffer.
-  std::string recvBuffer_;
-  // Whether connection is initialized.
-  bool initialized_;
-  // Whether auto reconnect when a session is done.
-  bool auto_reconnect_;
-  // The key of the server.
-  std::string key_;
-  // Initial bytes to be send to remote
-  std::string initBytes_;
-  // Send pointer of initial bytes.
-  size_t initSendPtr_;
-  // Event handler.
-  tvm::runtime::FEventHandler handler_;
+namespace tvm {
+namespace runtime {
+class RPCServer;
+}
+}
+
+@interface ViewController : UIViewController <UITextFieldDelegate> {
+  // RPC server instance.
+  std::shared_ptr<tvm::runtime::RPCServer> rpc_;
 }
 
 @property(weak, nonatomic) IBOutlet UITextField* proxyURL;
