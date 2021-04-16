@@ -18,12 +18,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       TVM_HOME: /Users/runner/work/tvm/tvm
+      PYTHONPATH: ${TVM_HOME}/python:${PYTHONPATH}
 
     steps:
     - name: Check1
-      run: echo $TVM_HOME
+      run: |
+        echo $TVM_HOME
+        echo $PYTHONPATH
     - name: Check2
-      run: echo $TVM_HOME
+      run: |
+        echo $TVM_HOME
+        echo $PYTHONPATH
     - name: Check .zshrc
       run: touch ~/.zshrc && cat ~/.zshrc
     - uses: actions/checkout@v2
