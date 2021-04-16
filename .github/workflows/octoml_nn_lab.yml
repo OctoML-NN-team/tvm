@@ -37,12 +37,11 @@ jobs:
         conda list
 
     - name: Test@ONNX_MacOS
-      if: startsWith(matrix.os, 'macOS')
-      shell: bash -l {0}
-      run: >-
-        conda activate tvm-build &&
-        export PYTHONPATH=${TVM_HOME}/python:${PYTHONPATH} &&
-        echo $PYTHONPATH &&
+      run: |
+        conda activate tvm-build
+        python -V
+        export PYTHONPATH=${TVM_HOME}/python:${PYTHONPATH}
+        echo $PYTHONPATH
 
     - name: Build from source
       run: |
