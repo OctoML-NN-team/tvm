@@ -16,8 +16,14 @@ jobs:
         os: [macOS-latest]
 
     runs-on: ${{ matrix.os }}
+    env:
+      TVM_HOME: /Users/runner/work/tvm/tvm
 
     steps:
+    - name: Check1
+      run: echo $TVM_HOME
+    - name: Check2
+      run: echo $TVM_HOME
     - name: Check .zshrc
       run: touch ~/.zshrc && cat ~/.zshrc
     - uses: actions/checkout@v2
@@ -29,10 +35,23 @@ jobs:
         echo "export PYTHONPATH=$(pwd)/python:${PYTHONPATH}" >> ~/.zshrc
         cat ~/.zshrc
 
-        # source ~/.zshrc
-        # echo $PYTHONPATH
-        # python3 -V
-        # python3 -c "import tvm"
+    # - name: Build from source
+    #   run: |
+    #     mkdir build
+    #     cp cmake/config.cmake build
+    #     cd build
+    #     cmake ..
+    #     make -j8
+
+    # - name: Save build
+    #   run: |
+    #     ls
+    #     zip -r /Users/runner/work/tvm/tvm/build.zip /Users/runner/work/tvm/tvm/build
+    #     ls
+    # - uses: actions/upload-artifact@v2
+    #   with:
+    #     name: build_artifact
+    #     path: /Users/runner/work/tvm/tvm/build.zip
 
     # - uses: conda-incubator/setup-miniconda@v2
     #   with:
@@ -45,72 +64,7 @@ jobs:
     #   run: |
     #     conda info
     #     conda list
-    
-    # - name: Test tvm
-    #   run: |
-    #     source ~/.zshrc
-    #     export PYTHONPATH=/Users/runner/work/tvm/tvm/python:${PYTHONPATH}
-    #     echo $PYTHONPATH
-    #     python -V
-    #     python -c "import tvm"
-    
-    # - name: Test artifact
-    #   run: |
-    #     mkdir -p tmp_artifact
-    #     echo hello > tmp_artifact/world.txt
-    #     ls
-    #     zip "tmp_artifact/world.zip" tmp_artifact/world.txt
-    #     ls
-    # - uses: actions/upload-artifact@v2
-    #   with:
-    #     name: my-artifact
-    #     path: tmp_artifact/world.zip
 
-    # - name: Download artifact
-    #   uses: dawidd6/action-download-artifact@v2
-    #   with:
-    #     workflow: octoml_nn_lab.yml
-    #     workflow_conclusion: success
-    #     name: my-artifact
-
-    - name: Build from source
-      run: |
-        mkdir build
-        cp cmake/config.cmake build
-        cd build
-        cmake ..
-        make -j8
-
-    # - name: Save build
-    #   run: |
-    #     ls
-    #     zip -r /Users/runner/work/tvm/tvm/build.zip /Users/runner/work/tvm/tvm/build
-    #     ls
-    # - uses: actions/upload-artifact@v2
-    #   with:
-    #     name: build_artifact
-    #     path: /Users/runner/work/tvm/tvm/build.zip
-
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        activate-environment: tvm-build
-        channel-priority: strict
-        environment-file: conda/build-environment.yaml
-        auto-activate-base: false
-        use-only-tar-bz2: true
-    - name: Conda info
-      run: |
-        conda info
-        conda list
-
-    - name: Test tvm
-      run: |
-        source ~/.zshrc
-        export PYTHONPATH=/Users/runner/work/tvm/tvm/python:${PYTHONPATH}
-        echo $PYTHONPATH
-        python -V
-        python -c "import tvm"
-    
     - name: Test@MacOS
       if: startsWith(matrix.os, 'macOS')
       shell: bash -l {0}
