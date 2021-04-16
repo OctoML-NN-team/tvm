@@ -81,15 +81,15 @@ jobs:
         cmake ..
         make -j8
 
-    - name: Save build
-      run: |
-        ls
-        zip -r /Users/runner/work/tvm/tvm/build.zip /Users/runner/work/tvm/tvm/build
-        ls
-    - uses: actions/upload-artifact@v2
-      with:
-        name: build_artifact
-        path: /Users/runner/work/tvm/tvm/build.zip
+    # - name: Save build
+    #   run: |
+    #     ls
+    #     zip -r /Users/runner/work/tvm/tvm/build.zip /Users/runner/work/tvm/tvm/build
+    #     ls
+    # - uses: actions/upload-artifact@v2
+    #   with:
+    #     name: build_artifact
+    #     path: /Users/runner/work/tvm/tvm/build.zip
 
     - uses: conda-incubator/setup-miniconda@v2
       with:
@@ -117,4 +117,7 @@ jobs:
       run: >-
         source ~/.zshrc &&
         conda activate tvm-build &&
+        export PYTHONPATH=/Users/runner/work/tvm/tvm/python:${PYTHONPATH} &&
+        echo $PYTHONPATH &&
+        python -V &&
         python -m pytest -v tests/python/contrib/test_bnns/test_onnx_topologies.py
