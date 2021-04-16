@@ -18,35 +18,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       TVM_HOME: /Users/runner/work/tvm/tvm
-      PYTHONPATH: ${TVM_HOME}/python:${PYTHONPATH}
-
+     
     steps:
-    - name: Check1
-      run: |
-        echo $TVM_HOME
-        echo $PYTHONPATH
-    - name: Check2
-      run: |
-        echo $TVM_HOME
-        echo $PYTHONPATH
-    - name: Check .zshrc
-      run: touch ~/.zshrc && cat ~/.zshrc
     - uses: actions/checkout@v2
     - name: Initialize submodules
       run: git submodule update --recursive --init
-    - name: Set up .zshrc variables
-      run: |
-        echo "export TVM_HOME=$(pwd)" >> ~/.zshrc
-        echo "export PYTHONPATH=$(pwd)/python:${PYTHONPATH}" >> ~/.zshrc
-        cat ~/.zshrc
 
-    # - name: Build from source
-    #   run: |
-    #     mkdir build
-    #     cp cmake/config.cmake build
-    #     cd build
-    #     cmake ..
-    #     make -j8
+    - name: Build from source
+      run: |
+        mkdir build
+        cp cmake/config.cmake build
+        cd build
+        cmake ..
+        make -j8
 
     # - name: Save build
     #   run: |
@@ -58,25 +42,24 @@ jobs:
     #     name: build_artifact
     #     path: /Users/runner/work/tvm/tvm/build.zip
 
-    # - uses: conda-incubator/setup-miniconda@v2
-    #   with:
-    #     activate-environment: tvm-build
-    #     channel-priority: strict
-    #     environment-file: conda/build-environment.yaml
-    #     auto-activate-base: false
-    #     use-only-tar-bz2: true
-    # - name: Conda info
-    #   run: |
-    #     conda info
-    #     conda list
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        activate-environment: tvm-build
+        channel-priority: strict
+        environment-file: conda/build-environment.yaml
+        auto-activate-base: false
+        use-only-tar-bz2: true
+    - name: Conda info
+      run: |
+        conda info
+        conda list
 
-    - name: Test@MacOS
+    - name: Test@ONNX_MacOS
       if: startsWith(matrix.os, 'macOS')
-      shell: bash -l {0}
-      run: >-
-        source ~/.zshrc &&
-        conda activate tvm-build &&
-        export PYTHONPATH=/Users/runner/work/tvm/tvm/python:${PYTHONPATH} &&
-        echo $PYTHONPATH &&
-        python -V &&
+      # shell: bash -l {0}
+      run: |
+        conda activate tvm-build
+        export PYTHONPATH=${TVM_HOME}/python:${PYTHONPATH}
+        echo $PYTHONPATH
+        python -V
         python -m pytest -v tests/python/contrib/test_bnns/test_onnx_topologies.py
