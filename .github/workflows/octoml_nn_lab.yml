@@ -15,7 +15,8 @@ jobs:
       matrix:
         os: [macOS-latest]
 
-    runs-on: ${{ matrix.os }}
+    # runs-on: ${{ matrix.os }}
+    runs-on: self-hosted
     env:
       TVM_HOME: /Users/runner/work/tvm/tvm
      
