@@ -36,5 +36,3 @@ dependencies:
   - make
   - scipy
   - pillow
-  - onnx
-  - decorator
