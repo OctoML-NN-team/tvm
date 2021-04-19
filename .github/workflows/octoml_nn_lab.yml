@@ -18,6 +18,7 @@ jobs:
     runs-on: self-hosted
     env:
       TVM_HOME: /Users/runner/work/tvm/tvm
+      PATH: /opt/miniconda3/bin:/opt/miniconda3/condabin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
      
     steps:
     - uses: actions/checkout@v2
