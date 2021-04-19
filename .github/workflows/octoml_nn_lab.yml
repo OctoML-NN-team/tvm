@@ -32,7 +32,7 @@ jobs:
     - name: Conda info
       run: |
         conda info
-        conda list
+        # conda list
 
 
     - name: Build TVM from source
