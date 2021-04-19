@@ -24,7 +24,7 @@ jobs:
     - name: Build TVM from source
       run: |
         mkdir build
-        cp cmake/config.cmake build
+        # cp cmake/config.cmake build
         cd build
         cmake .. -DUSE_LLVM=ON -DUSE_BNNS=ON
         make -j8
