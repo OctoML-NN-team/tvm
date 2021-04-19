@@ -34,7 +34,7 @@ jobs:
         activate-environment: tvm-build
         channel-priority: strict
         environment-file: conda/build-environment.yaml
-        auto-activate-base: false
+        auto-activate-base: true
         use-only-tar-bz2: true
     - name: Conda info
       run: |
