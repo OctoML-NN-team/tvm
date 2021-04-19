@@ -23,10 +23,11 @@ jobs:
 
     - name: Build TVM from source
       run: |
+        CMAKE_FLAGS="-DUSE_LLVM=ON -DUSE_BNNS=ON"
+
         mkdir build
-        # cp cmake/config.cmake build
         cd build
-        cmake .. -DUSE_LLVM=ON -DUSE_BNNS=ON
+        cmake .. $(echo $CMAKE_FLAGS)
         make -j8
 
     - uses: conda-incubator/setup-miniconda@v2
