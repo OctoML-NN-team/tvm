@@ -14,7 +14,7 @@ jobs:
     runs-on: self-hosted
     env:
       TVM_HOME: /Users/runner/work/tvm/tvm
-      # CONDA: /Users/octoml/miniconda3
+      CONDA: /Users/octoml/miniconda3
      
     steps:
     - uses: actions/checkout@v2
