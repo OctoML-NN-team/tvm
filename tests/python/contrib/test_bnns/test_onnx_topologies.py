@@ -135,7 +135,7 @@ def process(model_name):
 
 
 # @pytest.mark.skip(reason="Manually disabled because of huge complexity")
-@pytest.mark.skipif(bnns_is_absent, reason="BNNS runtime is absent")
+# @pytest.mark.skipif(bnns_is_absent, reason="BNNS runtime is absent")
 @pytest.mark.parametrize("model_name", MODEL_URL_COLLECTION.keys())
 def test_topology(model_name):
     process(model_name)

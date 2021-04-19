@@ -25,23 +25,13 @@ jobs:
     - name: Initialize submodules
       run: git submodule update --recursive --init
 
-    - name: Build from source
+    - name: Build TVM from source
       run: |
         mkdir build
         cp cmake/config.cmake build
         cd build
         cmake ..
         make -j8
-
-    # - name: Save build
-    #   run: |
-    #     ls
-    #     zip -r /Users/runner/work/tvm/tvm/build.zip /Users/runner/work/tvm/tvm/build
-    #     ls
-    # - uses: actions/upload-artifact@v2
-    #   with:
-    #     name: build_artifact
-    #     path: /Users/runner/work/tvm/tvm/build.zip
 
     - uses: conda-incubator/setup-miniconda@v2
       with:
