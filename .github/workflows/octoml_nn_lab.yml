@@ -30,16 +30,27 @@ jobs:
     #     conda info --envs
 
     - uses: conda-incubator/setup-miniconda@v2
-      with:
-        activate-environment: tvm-build
-        channel-priority: strict
-        environment-file: /Users/runner/work/tvm/tvm/conda/tvm-build.yaml
-        auto-activate-base: false
-        use-only-tar-bz2: true
-    - name: Conda info
-      run: |
-        conda info
-        conda list
+        with:
+          auto-update-conda: true
+          python-version: "3.7"
+      - name: Conda info
+        shell: bash -l {0}
+        run: conda info
+      - name: Conda list
+        shell: pwsh
+        run: conda list
+
+    # - uses: conda-incubator/setup-miniconda@v2
+    #   with:
+    #     activate-environment: tvm-build
+    #     channel-priority: strict
+    #     environment-file: /Users/runner/work/tvm/tvm/conda/tvm-build.yaml
+    #     auto-activate-base: false
+    #     use-only-tar-bz2: true
+    # - name: Conda info
+    #   run: |
+    #     conda info
+    #     conda list
 
     # - name: Build from source
     #   run: |
