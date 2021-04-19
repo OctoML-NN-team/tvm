@@ -14,7 +14,7 @@ jobs:
     runs-on: self-hosted
     env:
       TVM_HOME: /Users/runner/work/tvm/tvm
-      TEST: ${HOME}
+      TEST: ${{HOME}}
       CONDA: /Users/octoml/miniconda3
      
     steps:
@@ -27,7 +27,7 @@ jobs:
         mkdir build
         cp cmake/config.cmake build
         cd build
-        cmake ..
+        cmake .. -DUSE_LLVM=ON -DUSE_BNNS=ON
         make -j8
 
     - uses: conda-incubator/setup-miniconda@v2
