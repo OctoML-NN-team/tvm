@@ -16,8 +16,8 @@ jobs:
         os: [macOS-latest]
 
     runs-on: self-hosted
-    env:
-      TVM_HOME: /Users/runner/work/tvm/tvm
+    # env:
+      # TVM_HOME: /Users/runner/work/tvm/tvm
      
     steps:
     - uses: actions/checkout@v2
