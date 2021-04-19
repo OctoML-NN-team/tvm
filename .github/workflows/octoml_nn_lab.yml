@@ -14,26 +14,13 @@ jobs:
     runs-on: self-hosted
     env:
       TVM_HOME: /Users/runner/work/tvm/tvm
+      TEST: ${HOME}
       CONDA: /Users/octoml/miniconda3
      
     steps:
     - uses: actions/checkout@v2
     - name: Initialize submodules
       run: git submodule update --recursive --init
-
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        activate-environment: tvm-build
-        channel-priority: strict
-        environment-file: conda/tvm-build.yaml
-        auto-activate-base: false
-        use-only-tar-bz2: true
-
-    - name: Conda info
-      run: |
-        conda info
-        # conda list
-
 
     - name: Build TVM from source
       run: |
