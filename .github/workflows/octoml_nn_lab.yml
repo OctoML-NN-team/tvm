@@ -15,7 +15,6 @@ jobs:
       matrix:
         os: [macOS-latest]
 
-    # runs-on: ${{ matrix.os }}
     runs-on: self-hosted
     env:
       TVM_HOME: /Users/runner/work/tvm/tvm
@@ -73,7 +72,7 @@ jobs:
     #     conda list
 
     - name: Test@ONNX_MacOS
-      if: startsWith(matrix.os, 'macOS')
+      # if: startsWith(matrix.os, 'macOS')
       shell: bash -l {0}
       run: >-
         conda activate tvm-build &&
