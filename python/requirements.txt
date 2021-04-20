@@ -1,0 +1,7 @@
+numpy
+pytest
+cython
+scipy
+pillow
+onnx
+decorator
