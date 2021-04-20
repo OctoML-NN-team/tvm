@@ -23,6 +23,7 @@ jobs:
 
     - name: Build TVM from source
       run: |
+        pwd
         CMAKE_FLAGS="-DUSE_LLVM=ON -DUSE_BNNS=ON"
 
         mkdir build
