@@ -68,7 +68,7 @@ jobs:
 
     - name: Clean VENV
       if: always()
-      run: echo "hello clean"
+      run: ls ${VENVS_HOME}
 
   Clean:
     needs: Build
