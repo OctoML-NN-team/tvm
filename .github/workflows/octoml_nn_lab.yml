@@ -14,6 +14,7 @@ jobs:
     runs-on: self-hosted
     env:
       TVM_HOME: /Users/runner/work/tvm/tvm
+      RUNNER_HOME: /Users/runner/work
       CONDA: /Users/octoml/miniconda3
      
     steps:
@@ -24,6 +25,7 @@ jobs:
     - name: Build TVM from source
       run: |
         pwd
+        ls ${RUNNER_HOME}
         CMAKE_FLAGS="-DUSE_LLVM=ON -DUSE_BNNS=ON"
 
         mkdir build
