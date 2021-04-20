@@ -1,13 +1,14 @@
 name: LabCI
 
-on:
-  push:
-    branches:
-      - main
+# on:
+#   push:
+#     branches:
+#       - main
 
-  pull_request:
-    branches:
-      - main
+#   pull_request:
+#     branches:
+#       - main
+on: [workflow_dispatch]
 
 jobs:
   TopologyCI:
