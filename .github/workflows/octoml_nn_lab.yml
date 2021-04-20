@@ -10,10 +10,11 @@ on:
       - main
 
 jobs:
-  Build:
+  TopologyCI:
     runs-on: self-hosted
     env:
       TVM_HOME: ${{ github.workspace }}
+      TVM_BUILD: ${{ github.workspace }}/build
       VENVS_HOME: ${{ github.workspace }}/venv
     
     steps:
@@ -33,8 +34,8 @@ jobs:
       run: |
         CMAKE_FLAGS="-DUSE_LLVM=ON -DUSE_BNNS=ON"
 
-        mkdir build
-        cd build
+        mkdir ${TVM_BUILD}
+        cd ${TVM_BUILD}
         cmake .. $(echo $CMAKE_FLAGS)
         make -j8
 
@@ -42,12 +43,12 @@ jobs:
       run: |
         export PYTHONPATH=${TVM_HOME}/python:${PYTHONPATH}
         source ${VENVS_HOME}/tvm-build/bin/activate
-        python -m pytest -v tests/python/contrib/test_bnns/test_onnx_topologies.py
+        python -m pytest -v ${TVM_HOME}/tests/python/contrib/test_bnns/test_onnx_topologies.py
     
     - name: Clean VENV
       if: always()
       run: rm -rf ${VENVS_HOME}
 
-    - name: Clean TVM Source
+    - name: Clean TVM Build
       if: always()
-      run: rm -rf ${TVM_HOME}
+      run: rm -rf ${TVM_BUILD}
