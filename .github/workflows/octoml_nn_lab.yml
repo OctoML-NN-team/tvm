@@ -14,7 +14,7 @@ jobs:
     runs-on: self-hosted
     env:
       TVM_HOME: /Users/runner/work/tvm/tvm
-      RUNNER_HOME: /Users/runner/work/tvm
+      RUNNER_HOME: /Users/octoml/actions-runner/_work/tvm
       CONDA: /Users/octoml/miniconda3
      
     steps:
@@ -33,18 +33,18 @@ jobs:
         cmake .. $(echo $CMAKE_FLAGS)
         make -j8
 
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        activate-environment: tvm-build
-        channel-priority: strict
-        environment-file: conda/tvm-build.yaml
-        auto-activate-base: false
-        use-only-tar-bz2: true
+    # - uses: conda-incubator/setup-miniconda@v2
+    #   with:
+    #     activate-environment: tvm-build
+    #     channel-priority: strict
+    #     environment-file: conda/tvm-build.yaml
+    #     auto-activate-base: false
+    #     use-only-tar-bz2: true
 
-    - name: Conda info
-      run: |
-        conda info
-        conda list
+    # - name: Conda info
+    #   run: |
+    #     conda info
+    #     conda list
 
     - name: Test@ONNX_MacOS
       shell: bash -l {0}
