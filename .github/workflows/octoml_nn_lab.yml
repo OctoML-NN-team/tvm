@@ -68,7 +68,9 @@ jobs:
 
     - name: Clean VENV
       if: always()
-      run: ls ${VENVS_HOME}
+      run: |
+        rm -rf ${VENVS_HOME}
+        ls ${VENVS_HOME}
 
   Clean:
     needs: Build
