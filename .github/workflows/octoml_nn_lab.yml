@@ -16,7 +16,7 @@ jobs:
       TVM_HOME: /Users/octoml/actions-runner/_work/tvm/tvm
       #RUNNER_HOME: /Users/octoml/actions-runner/_work/tvm
       VENVS_HOME: /Users/octoml/actions-runner/_work/tvm/venvs
-      TMP: a-${{ github.runner.workspace }}
+      # TMP: a-${{ runner.workspace }}
     
     steps:
     - uses: actions/checkout@v2
@@ -30,7 +30,7 @@ jobs:
     - name: Dump job context
       env:
         JOB_CONTEXT: ${{ toJson(job) }}
-      run: echo "$JOB_CONTEXT"
+      run: echo ${{ runner.workspace }}
     - name: Dump runner context
       env:
         RUNNER_CONTEXT: ${{ toJson(runner) }}
