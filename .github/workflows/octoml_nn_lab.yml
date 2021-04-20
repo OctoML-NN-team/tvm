@@ -13,7 +13,7 @@ jobs:
   Build:
     runs-on: self-hosted
     env:
-      TVM_HOME: /Users/runner/work/tvm/tvm
+      TVM_HOME: /Users/octoml/actions-runner/_work/tvm/tvm
       RUNNER_HOME: /Users/octoml/actions-runner/_work/tvm
       VENVS_HOME: /Users/octoml/actions-runner/_work/tvm/venvs
       CONDA: /Users/octoml/miniconda3
