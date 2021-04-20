@@ -66,6 +66,10 @@ jobs:
         export PYTHONPATH=${TVM_HOME}/python:${PYTHONPATH} &&
         python -m pytest -v tests/python/contrib/test_bnns/test_onnx_topologies.py
 
+    - name: Clean VENV
+      if: always()
+      run: echo "hello clean"
+
   Clean:
     needs: Build
     runs-on: self-hosted
