@@ -15,6 +15,7 @@ jobs:
     env:
       TVM_HOME: /Users/runner/work/tvm/tvm
       RUNNER_HOME: /Users/octoml/actions-runner/_work/tvm
+      VENVS_HOME: /Users/octoml/actions-runner/_work/tvm/venvs
       CONDA: /Users/octoml/miniconda3
      
     steps:
@@ -22,10 +23,22 @@ jobs:
     - name: Initialize submodules
       run: git submodule update --recursive --init
 
+    - name: Create venv
+      run: |
+        mkdir ${VENVS_HOME}
+        cd ${VENVS_HOME}
+        
+        pwd
+        ls
+
+        python3 -m venv tvm-build
+        source tvm-build/bin/activate
+
+        ls ${TVM_HOME}
+        pip install -r ${TVM_HOME}/python/requirements.txt
+
     - name: Build TVM from source
       run: |
-        pwd
-        ls ${RUNNER_HOME}
         CMAKE_FLAGS="-DUSE_LLVM=ON -DUSE_BNNS=ON"
 
         mkdir build
