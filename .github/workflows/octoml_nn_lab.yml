@@ -65,3 +65,12 @@ jobs:
         conda activate tvm-build &&
         export PYTHONPATH=${TVM_HOME}/python:${PYTHONPATH} &&
         python -m pytest -v tests/python/contrib/test_bnns/test_onnx_topologies.py
+
+  Clean:
+    needs: Build
+    runs-on: self-hosted
+     
+    steps:
+      - name: hello
+        run: echo "hello from clean"
+
