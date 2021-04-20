@@ -14,9 +14,9 @@ jobs:
     runs-on: self-hosted
     env:
       TVM_HOME: /Users/octoml/actions-runner/_work/tvm/tvm
-      RUNNER_HOME: /Users/octoml/actions-runner/_work/tvm
+      #RUNNER_HOME: /Users/octoml/actions-runner/_work/tvm
       VENVS_HOME: /Users/octoml/actions-runner/_work/tvm/venvs
-      CONDA: /Users/octoml/miniconda3
+      #CONDA: /Users/octoml/miniconda3
      
     steps:
     - uses: actions/checkout@v2
@@ -27,14 +27,8 @@ jobs:
       run: |
         mkdir ${VENVS_HOME}
         cd ${VENVS_HOME}
-        
-        pwd
-        ls
-
         python3 -m venv tvm-build
         source tvm-build/bin/activate
-
-        ls ${TVM_HOME}
         pip install -r ${TVM_HOME}/python/requirements.txt
 
     - name: Build TVM from source
@@ -59,24 +53,19 @@ jobs:
     #     conda info
     #     conda list
 
+    # - name: Test@ONNX_MacOS
+    #   shell: bash -l {0}
+    #   run: >-
+    #     conda activate tvm-build &&
+    #     export PYTHONPATH=${TVM_HOME}/python:${PYTHONPATH} &&
+    #     python -m pytest -v tests/python/contrib/test_bnns/test_onnx_topologies.py
+    
     - name: Test@ONNX_MacOS
-      shell: bash -l {0}
-      run: >-
-        conda activate tvm-build &&
-        export PYTHONPATH=${TVM_HOME}/python:${PYTHONPATH} &&
+      run: |
+        export PYTHONPATH=${TVM_HOME}/python:${PYTHONPATH}
+        source ${VENVS_HOME}/tvm-build/bin/activate
         python -m pytest -v tests/python/contrib/test_bnns/test_onnx_topologies.py
-
+    
     - name: Clean VENV
       if: always()
-      run: |
-        rm -rf ${VENVS_HOME}
-        ls ${VENVS_HOME}
-
-  Clean:
-    needs: Build
-    runs-on: self-hosted
-     
-    steps:
-      - name: hello
-        run: echo "hello from clean"
-
+      run: rm -rf ${VENVS_HOME}
