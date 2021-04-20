@@ -16,7 +16,7 @@ jobs:
       TVM_HOME: /Users/octoml/actions-runner/_work/tvm/tvm
       #RUNNER_HOME: /Users/octoml/actions-runner/_work/tvm
       VENVS_HOME: /Users/octoml/actions-runner/_work/tvm/venvs
-      TMP: ${{ GITHUB_WORKSPACE }}
+      TMP: ${{ github.workspace }}
     
     steps:
     - uses: actions/checkout@v2
