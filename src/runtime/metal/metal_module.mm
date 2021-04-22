@@ -62,7 +62,6 @@ class MetalModuleNode final : public runtime::ModuleNode {
     stream->Write(data_);
   }
   std::string GetSource(const std::string& format) final {
-      std::cout << "MetalModuleNode::GetSource" << std::endl;
     if (format == fmt_) return data_;
     if (source_.length() != 0) {
       return source_;
@@ -74,7 +73,6 @@ class MetalModuleNode final : public runtime::ModuleNode {
   }
   // get a from primary context in device_id
   id<MTLComputePipelineState> GetPipelineState(size_t device_id, const std::string& func_name) {
-      std::cout << "MetalModuleNode::GetPipelineState" << std::endl;
     metal::MetalWorkspace* w = metal::MetalWorkspace::Global();
     ICHECK_LT(device_id, w->devices.size());
     // start lock scope.
@@ -170,7 +168,6 @@ class MetalWrappedFunc {
   void Init(MetalModuleNode* m, ObjectPtr<Object> sptr, const std::string& func_name,
             size_t num_buffer_args, size_t num_pack_args,
             const std::vector<std::string>& thread_axis_tags) {
-      std::cout << "MetalWrappedFunc : Init" << std::endl;
     w_ = metal::MetalWorkspace::Global();
     m_ = m;
     sptr_ = sptr;
@@ -185,7 +182,6 @@ class MetalWrappedFunc {
   }
   // invoke the function with void arguments
   void operator()(TVMArgs args, TVMRetValue* rv, const ArgUnion64* pack_args) const {
-      std::cout << "MetalWrappedFunc : operator()" << std::endl;
     @autoreleasepool {
       metal::MetalThreadEntry* t = metal::MetalThreadEntry::ThreadLocal();
       int device_id = t->context.device_id;
@@ -241,7 +237,6 @@ class MetalWrappedFunc {
 
 PackedFunc MetalModuleNode::GetFunction(const std::string& name,
                                         const ObjectPtr<Object>& sptr_to_self) {
-      std::cout << "MetalModuleNode::GetFunction, name: " << name << std::endl;
   @autoreleasepool {
     ICHECK_EQ(sptr_to_self.get(), this);
     ICHECK_NE(name, symbol::tvm_module_main) << "Device function do not have main";
@@ -258,7 +253,6 @@ PackedFunc MetalModuleNode::GetFunction(const std::string& name,
 
 Module MetalModuleCreate(std::string data, std::string fmt,
                          std::unordered_map<std::string, FunctionInfo> fmap, std::string source) {
-      std::cout << "MetalModuleCreate, data: " << data << std::endl;
   @autoreleasepool {
     metal::MetalWorkspace::Global()->Init();
     auto n = make_object<MetalModuleNode>(data, fmt, fmap, source);
@@ -268,7 +262,6 @@ Module MetalModuleCreate(std::string data, std::string fmt,
 
 // Load module from module.
 Module MetalModuleLoadFile(const std::string& file_name, const std::string& format) {
-      std::cout << "MetalModuleLoadFile, f_name: " << file_name << std::endl;
   std::string data;
   std::unordered_map<std::string, FunctionInfo> fmap;
   std::string fmt = GetFileFormat(file_name, format);
@@ -279,7 +272,6 @@ Module MetalModuleLoadFile(const std::string& file_name, const std::string& form
 }
 
 Module MetalModuleLoadBinary(void* strm) {
-      std::cout << "MetalModuleLoadBinary" << std::endl;
   dmlc::Stream* stream = static_cast<dmlc::Stream*>(strm);
   std::string data;
   std::unordered_map<std::string, FunctionInfo> fmap;

@@ -110,9 +110,9 @@ TVM_REGISTER_GLOBAL("tvm.contrib.mps.conv2d").set_body([](TVMArgs args, TVMRetVa
   MetalThreadEntry* entry_ptr = MetalThreadEntry::ThreadLocal();
   runtime::metal::MetalThreadEntry* rt = runtime::metal::MetalThreadEntry::ThreadLocal();
   id<MTLDevice> dev = entry_ptr->metal_api->GetDevice(data->ctx);
-  ICHECK(rt->stream[data->ctx.device_id] != nullptr);
-  auto* stream = static_cast<runtime::metal::Stream*>(rt->stream[data->ctx.device_id]);
-  id<MTLCommandBuffer> cb = stream->GetCommandBuffer();
+  ICHECK(rt->stream != nullptr);
+  auto* queue = static_cast<runtime::metal::MetalThreadEntry::Queue*>(rt->stream);
+  id<MTLCommandBuffer> cb = [queue->queue_ commandBuffer];
   // data to MPSImage
   DLTensor tmp_in;
   (*f_buf2img)(data, &tmp_in);

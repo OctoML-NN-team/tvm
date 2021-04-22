@@ -30,7 +30,6 @@ namespace runtime {
 namespace metal {
 
 MetalWorkspace* MetalWorkspace::Global() {
-    std::cout << "MetalWorkspace::Global" << std::endl;
   @autoreleasepool {
     // NOTE: explicitly use new to avoid exit-time destruction of global state
     // Global state will be recycled by OS as the process exits.
@@ -40,7 +39,6 @@ MetalWorkspace* MetalWorkspace::Global() {
 }
 
 void MetalWorkspace::GetAttr(TVMContext ctx, DeviceAttrKind kind, TVMRetValue* rv) {
-    std::cout << "MetalWorkspace::GetAttr" << std::endl;
   @autoreleasepool {
     this->Init();
     size_t index = static_cast<size_t>(ctx.device_id);
@@ -103,7 +101,6 @@ kernel void CopyKernel(
 // For safe issue, turn off warp-aware optimization for now
 // But we keep this code.
 int GetWarpSize(id<MTLDevice> dev) {
-    std::cout << "MetalWorkspace GetWarpSize" << std::endl;
   NSError* error_msg = nil;
   id<MTLLibrary> lib = [dev newLibraryWithSource:[NSString stringWithUTF8String:kDummyKernel]
                                          options:nil
@@ -121,7 +118,6 @@ int GetWarpSize(id<MTLDevice> dev) {
 }
 
 MetalWorkspace::~MetalWorkspace() {
-    std::cout << "MetalWorkspace::~MetalWorkspace" << std::endl;
   for (auto x : devices) {
     [x release];
   }
@@ -131,7 +127,6 @@ MetalWorkspace::~MetalWorkspace() {
 }
 
 void MetalWorkspace::Init() {
-    std::cout << "MetalWorkspace::Init" << std::endl;
   if (initialized_) return;
   std::lock_guard<std::mutex> lock(this->mutex);
   if (initialized_) return;
@@ -159,13 +154,11 @@ void MetalWorkspace::Init() {
 }
 
 void MetalWorkspace::SetDevice(TVMContext ctx) {
-    std::cout << "MetalWorkspace::SetDevice" << std::endl;
   MetalThreadEntry::ThreadLocal()->context.device_id = ctx.device_id;
 }
 
 void* MetalWorkspace::AllocDataSpace(TVMContext ctx, size_t nbytes, size_t alignment,
                                      DLDataType type_hint) {
-    std::cout << "MetalWorkspace::AllocDataSpace" << std::endl;
   @autoreleasepool {
     this->Init();
     id<MTLDevice> dev = GetDevice(ctx);
@@ -185,7 +178,6 @@ void* MetalWorkspace::AllocDataSpace(TVMContext ctx, size_t nbytes, size_t align
 }
 
 void MetalWorkspace::FreeDataSpace(TVMContext ctx, void* ptr) {
-    std::cout << "MetalWorkspace::FreeDataSpace" << std::endl;
   @autoreleasepool {
     // MTLBuffer PurgeableState should be set to empty before manual
     // release in order to prevent memory leak
@@ -199,11 +191,6 @@ void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* 
                                     size_t to_offset, size_t size, TVMContext ctx_from,
                                     TVMContext ctx_to, DLDataType type_hint,
                                     TVMStreamHandle stream) {
-    std::cout << "MetalWorkspace::CopyDataFromTo:" << std::endl;
-    float* f = (float*)from;
-    for (int i = 0; i < 10; ++i)
-        std::cout << f[i] << ", ";
-    std::cout << std::endl;
   @autoreleasepool {
     this->Init();
     TVMContext ctx = ctx_from;
@@ -274,7 +261,6 @@ void MetalWorkspace::CopyDataFromTo(const void* from, size_t from_offset, void* 
 }
 
 TVMStreamHandle MetalWorkspace::CreateStream(TVMContext ctx) {
-    std::cout << "MetalWorkspace::CreateStream" << std::endl;
   Stream* stream = new Stream(devices[ctx.device_id]);
   return static_cast<TVMStreamHandle>(stream);
 }
@@ -286,7 +272,6 @@ void MetalWorkspace::FreeStream(TVMContext ctx, TVMStreamHandle stream) {
 }
 
 void MetalWorkspace::StreamSync(TVMContext ctx, TVMStreamHandle stream) {
-    std::cout << "MetalWorkspace::StreamSync" << std::endl;
   @autoreleasepool {
     Stream* s;
     if (stream != nullptr)
@@ -308,17 +293,14 @@ void MetalWorkspace::SetStream(TVMContext ctx, TVMStreamHandle stream) {
 }
 
 void* MetalWorkspace::AllocWorkspace(TVMContext ctx, size_t size, DLDataType type_hint) {
-    std::cout << "MetalWorkspace::AllocWorkspace" << std::endl;
   return MetalThreadEntry::ThreadLocal()->pool.AllocWorkspace(ctx, size);
 }
 
 void MetalWorkspace::FreeWorkspace(TVMContext ctx, void* data) {
-    std::cout << "MetalWorkspace::FreeWorkspace" << std::endl;
   MetalThreadEntry::ThreadLocal()->pool.FreeWorkspace(ctx, data);
 }
 
 MetalThreadEntry::~MetalThreadEntry() {
-    std::cout << "MetalThreadEntry::~MetalThreadEntry" << std::endl;
   for (auto x : temp_buffer_) {
     if (x != nil) {
       [(id<MTLBuffer>)x setPurgeableState:MTLPurgeableStateEmpty];
@@ -328,7 +310,6 @@ MetalThreadEntry::~MetalThreadEntry() {
 }
 
 id<MTLBuffer> MetalThreadEntry::GetTempBuffer(TVMContext ctx, size_t size) {
-    std::cout << "MetalThreadEntry::GetTempBuffer" << std::endl;
   if (temp_buffer_.size() <= static_cast<size_t>(ctx.device_id)) {
     temp_buffer_.resize(ctx.device_id + 1, nil);
   }
@@ -348,7 +329,6 @@ typedef dmlc::ThreadLocalStore<MetalThreadEntry> MetalThreadStore;
 MetalThreadEntry* MetalThreadEntry::ThreadLocal() { return MetalThreadStore::Get(); }
 
 TVM_REGISTER_GLOBAL("device_api.metal").set_body([](TVMArgs args, TVMRetValue* rv) {
-    std::cout << "device_api.metal" << std::endl;
   DeviceAPI* ptr = MetalWorkspace::Global();
   *rv = static_cast<void*>(ptr);
 });

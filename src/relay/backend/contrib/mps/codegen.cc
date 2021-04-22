@@ -87,7 +87,6 @@ class MPSJSONSerializer : public backend::contrib::JSONSerializer {
 
       auto body = fn->body.as<CallNode>();
       if (name == "mps.conv2d") {
-        std::cout << "MPSJSONSerializer::VisitExpr_: convolution" << std::endl;
         //auto add_op_type = IsOp(body, "add") ? "add" : "nn.bias_add";
         //call = GetRootCall(body, 1, {"nn.conv2d"});
         call = body;
