@@ -78,6 +78,7 @@ void ArrayCopyFromBytes(DLTensor* handle, const void* data, size_t nbytes) {
 }
 
 void ArrayCopyToBytes(const DLTensor* handle, void* data, size_t nbytes) {
+    std::cout << "ArrayCopyToBytes" << std::endl;
   size_t arr_size = GetDataSize(*handle);
   ICHECK_EQ(arr_size, nbytes) << "ArrayCopyToBytes: size mismatch";
   ICHECK(IsContiguous(*handle)) << "ArrayCopyToBytes only support contiguous array for now";
@@ -226,6 +227,7 @@ void NDArray::CopyFromBytes(const void* data, size_t nbytes) {
 }
 
 void NDArray::CopyFromTo(const DLTensor* from, DLTensor* to, TVMStreamHandle stream) {
+    std::cout << "NDArray::CopyFromTo" << std::endl;
   size_t from_size = GetDataSize(*from);
   size_t to_size = GetDataSize(*to);
   ICHECK_EQ(from_size, to_size) << "TVMArrayCopyFromTo: The size must exactly match";
@@ -298,6 +300,14 @@ int TVMArrayFree(TVMArrayHandle handle) {
 }
 
 int TVMArrayCopyFromTo(TVMArrayHandle from, TVMArrayHandle to, TVMStreamHandle stream) {
+  std::cout << " >> ndarray.cc: TVMArrayCopyFromTo, from: ";
+  for (int i = 0; i < 10; ++i)
+      std::cout << ((float*)from)[0] << ", ";
+  std::cout << std::endl;
+  std::cout << " >> ndarray.cc: TVMArrayCopyFromTo, to: ";
+  for (int i = 0; i < 10; ++i)
+      std::cout << ((float*)to)[0] << ", ";
+  std::cout << std::endl;
   API_BEGIN();
   NDArray::CopyFromTo(from, to, stream);
   API_END();
@@ -318,12 +328,14 @@ int TVMArrayToDLPack(TVMArrayHandle from, DLManagedTensor** out) {
 void TVMDLManagedTensorCallDeleter(DLManagedTensor* dltensor) { (*(dltensor->deleter))(dltensor); }
 
 int TVMArrayCopyFromBytes(TVMArrayHandle handle, void* data, size_t nbytes) {
+    std::cout << " >> ndarray.cc: TVMArrayCopyFromBytes" << std::endl;
   API_BEGIN();
   ArrayCopyFromBytes(handle, data, nbytes);
   API_END();
 }
 
 int TVMArrayCopyToBytes(TVMArrayHandle handle, void* data, size_t nbytes) {
+    std::cout << " >> ndarray.cc: TVMArrayCopyToBytes" << std::endl;
   API_BEGIN();
   ArrayCopyToBytes(handle, data, nbytes);
   API_END();

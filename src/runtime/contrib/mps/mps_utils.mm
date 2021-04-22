@@ -24,6 +24,7 @@ namespace contrib {
 
 // MPS Data Type
 MPSDataType MPSType::DLTypeToMPSType(const DLDataType& dtype) {
+    std::cout << "MPS MPSType::DLTypeToMPSType" << std::endl;
   switch (dtype.code) {
     case kDLInt:
       if (dtype.bits == 8 && dtype.lanes == 1)
@@ -59,6 +60,7 @@ MPSDataType MPSType::DLTypeToMPSType(const DLDataType& dtype) {
 // MetalThreadEntry
 
 MPSImage* MetalThreadEntry::AllocMPSImage(id<MTLDevice> dev, MPSImageDescriptor* desc) {
+    std::cout << "MPS MetalThreadEntry::AllocMPSImage" << std::endl;
   MPSImage* mpsimg = [[MPSImage alloc] initWithDevice:dev imageDescriptor:desc];
   img_table.push_back(mpsimg);
   return mpsimg;
@@ -66,18 +68,21 @@ MPSImage* MetalThreadEntry::AllocMPSImage(id<MTLDevice> dev, MPSImageDescriptor*
 
 MPSTemporaryImage* MetalThreadEntry::AllocTempImage(id<MTLCommandBuffer> cb,
                                                     MPSImageDescriptor* desc) {
+    std::cout << "MPS MetalThreadEntry::AllocTempImage" << std::endl;
   MPSTemporaryImage* mpsimg = [MPSTemporaryImage temporaryImageWithCommandBuffer:cb
                                                                  imageDescriptor:desc];
   return mpsimg;
 }
 
 MetalThreadEntry::MetalThreadEntry() {
+    std::cout << "MPS MetalThreadEntry::MetalThreadEntry" << std::endl;
   auto func = runtime::Registry::Get("device_api.metal");
   void* ret = (*func)();
   metal_api = static_cast<runtime::metal::MetalWorkspace*>(ret);
 }
 
 MetalThreadEntry::~MetalThreadEntry() {
+    std::cout << "MPS MetalThreadEntry::~MetalThreadEntry" << std::endl;
   for (int i = 0; i < img_table.size(); ++i) {
     [img_table[i] dealloc];
   }
