@@ -1071,8 +1071,12 @@ def _timed_rpc_run(
 
     if error_no == 0:
         try:
-            stream = ctx.create_stream()
-            ctx.set_stream(stream)
+            stream = None
+            try:
+                stream = ctx.create_stream()
+                ctx.set_stream(stream)
+            finally:
+                pass
             random_fill = remote.get_function("tvm.contrib.random.random_fill")
             assert (
                 random_fill
@@ -1118,7 +1122,8 @@ def _timed_rpc_run(
             remote.remove("")
         # pylint: disable=broad-except
         except Exception:
-            ctx.free_stream(stream)
+            if stream is not None:
+                ctx.free_stream(stream)
             costs = (MAX_FLOAT,)
             error_no = MeasureErrorNo.RUNTIME_DEVICE
             error_msg = make_traceback_info()
