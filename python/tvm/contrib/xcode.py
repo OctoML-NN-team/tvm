@@ -92,8 +92,12 @@ def create_dylib(output, objects, arch, sdk="macosx"):
     sdk_path = xcrun(["-sdk", sdk, "--show-sdk-path"])
     cmd = [clang]
     cmd += ["-dynamiclib"]
-    cmd += ["-arch", arch]
     cmd += ["-isysroot", sdk_path]
+    if (sdk == 'iphoneos'):
+        cmd += ["-target", "arm64-apple-ios11.0"]
+        cmd += ["-install_name", "@rpath/" + output]
+    else:
+        cmd += ["-arch", arch]
     cmd += ["-o", output]
     if isinstance(objects, str):
         cmd += [objects]
