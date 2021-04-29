@@ -64,7 +64,6 @@ class MPSJSONRuntime : public JSONRuntimeBase {
   const char* type_key() const override { return "mps_json"; }
 
   void Init(const Array<NDArray>& consts) override {
-    std::cout << "MPSJSONRuntime::Init" << std::endl;
     ICHECK_EQ(consts.size(), const_idx_.size())
         << "The number of input constants must match the number of required.";
 
@@ -75,7 +74,6 @@ class MPSJSONRuntime : public JSONRuntimeBase {
   }
 
   void Run() override {
-    std::cout << "MPSJSONRuntime::Run()" << std::endl;
     // Wrap external handler into MPS tensor representation
     auto bind_ext_hdl_to_tensor = [this](uint32_t eid) {
       id<MTLBuffer> buf = (id<MTLBuffer>)data_entry_[eid]->data;
@@ -110,7 +108,6 @@ class MPSJSONRuntime : public JSONRuntimeBase {
   void BindInputsAndOutputs() {
       image_eid_.resize(data_entry_.size());
       matrix_eid_.resize(data_entry_.size());
-    std::cout << "MPSJSONRuntime::BindInputsAndOutputs" << std::endl;
     auto createTensor = [&](JSONGraphNodeEntry entry) {
       auto node = nodes_[entry.id_];
       auto dlshape = node.GetOpShape()[entry.index_];
@@ -154,7 +151,6 @@ class MPSJSONRuntime : public JSONRuntimeBase {
 
   /** Allocate intermediate tensors */
   void AllocateIntermediateTensors() {
-    std::cout << "MPSJSONRuntime::AllocateIntermediateTensors" << std::endl;
     //for (int i = 0; i < nodes_.size(); ++i) {
     //  auto eid = JSONGraphNodeEntry(i, 0);
     //  if (tensors_eid_[eid.id_] != nullptr) continue;
@@ -169,7 +165,6 @@ class MPSJSONRuntime : public JSONRuntimeBase {
 
   // Build up the engine based on the input graph.
   void BuildEngine() {
-    std::cout << "MPSJSONRuntime::BuildEngine" << std::endl;
     // Build subgraph engine.
     for (size_t nid = 0; nid < nodes_.size(); ++nid) {
       const auto& node = nodes_[nid];

@@ -30,7 +30,6 @@ namespace runtime {
 namespace metal {
 
 MetalWorkspace* MetalWorkspace::Global() {
-    std::cout << "MetalWorkspace::Global" << std::endl;
   @autoreleasepool {
     // NOTE: explicitly use new to avoid exit-time destruction of global state
     // Global state will be recycled by OS as the process exits.
@@ -104,7 +103,6 @@ kernel void CopyKernel(
 // For safe issue, turn off warp-aware optimization for now
 // But we keep this code.
 int GetWarpSize(id<MTLDevice> dev) {
-    std::cout << "MetalWorkspace GetWarpSize" << std::endl;
   NSError* error_msg = nil;
   id<MTLLibrary> lib = [dev newLibraryWithSource:[NSString stringWithUTF8String:kDummyKernel]
                                          options:nil
@@ -122,7 +120,6 @@ int GetWarpSize(id<MTLDevice> dev) {
 }
 
 MetalWorkspace::~MetalWorkspace() {
-    std::cout << "MetalWorkspace::~MetalWorkspace" << std::endl;
   for (auto x : devices) {
     [x release];
   }
@@ -132,7 +129,6 @@ MetalWorkspace::~MetalWorkspace() {
 }
 
 void MetalWorkspace::Init() {
-    std::cout << "MetalWorkspace::Init" << std::endl;
   if (initialized_) return;
   std::lock_guard<std::mutex> lock(this->mutex);
   if (initialized_) return;
@@ -165,7 +161,6 @@ void MetalWorkspace::SetDevice(Device dev) {
 
 void* MetalWorkspace::AllocDataSpace(Device device, size_t nbytes, size_t alignment,
                                      DLDataType type_hint) {
-    std::cout << "MetalWorkspace::AllocDataSpace" << std::endl;
   @autoreleasepool {
     this->Init();
     id<MTLDevice> dev = GetDevice(device);
@@ -306,7 +301,6 @@ void MetalWorkspace::FreeWorkspace(Device dev, void* data) {
 }
 
 MetalThreadEntry::~MetalThreadEntry() {
-    std::cout << "MetalThreadEntry::~MetalThreadEntry" << std::endl;
   for (auto x : temp_buffer_) {
     if (x != nil) {
       [(id<MTLBuffer>)x setPurgeableState:MTLPurgeableStateEmpty];
@@ -335,7 +329,6 @@ typedef dmlc::ThreadLocalStore<MetalThreadEntry> MetalThreadStore;
 MetalThreadEntry* MetalThreadEntry::ThreadLocal() { return MetalThreadStore::Get(); }
 
 TVM_REGISTER_GLOBAL("device_api.metal").set_body([](TVMArgs args, TVMRetValue* rv) {
-    std::cout << "device_api.metal" << std::endl;
   DeviceAPI* ptr = MetalWorkspace::Global();
   *rv = static_cast<void*>(ptr);
 });

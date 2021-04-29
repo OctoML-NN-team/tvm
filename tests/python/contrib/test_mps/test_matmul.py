@@ -109,9 +109,6 @@ def build_and_run(
     target = 'metal'
     target_host = "llvm -mtriple=x86_64-apple-darwin20.1.0"
 
-    print('-' *  50)
-    print(mod)
-    print('-' *  50)
     try:
         #lib = build_module(mod, device.target, params, enable_bnns, tvm_ops)
         lib = build_module(mod, target, target_host, params, enable_bnns, tvm_ops)
@@ -128,9 +125,7 @@ def build_and_run(
     #gen_module = graph_runtime.GraphModule(lib["default"](device.device.cpu(0)))
     ctx = tvm.metal()
     gen_module = graph_executor.GraphModule(lib["default"](ctx))
-    print('before set_input: ', gen_module.get_input(0))
     gen_module.set_input(**inputs)
-    print('after set_input: ', gen_module.get_input(0))
     out = []
     for _ in range(no_runs):
         gen_module.run()
