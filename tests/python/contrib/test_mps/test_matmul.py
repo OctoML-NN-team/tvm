@@ -164,17 +164,17 @@ def test_matmul():
     dtype = "float32"
     # C[N, I, J] = A[N, I, K] * B[N, J, K]
     shapes_config = [
-        # B, I, J, K
+        # N, I, J, K
         [1, 4, 4, 3],
         [1, 16, 32, 32],
-        #[2, 1, 1, 3],
-        #[2, 16, 32, 32],
-        #[5, 1, 1, 3],
+        [2, 1, 1, 3],
+        [2, 16, 32, 32],
+        [5, 1, 1, 3],
     ]
     data_config = [
         # A_is_constant, B_is_constant
         [False, True],
-        #[True, False],
+        [True, False],
         [False, False],
     ]
     for N, I, J, K in shapes_config:
@@ -194,74 +194,6 @@ def test_matmul():
                 is_b_constant=is_b_constant,
             )
             compare_inference_with_ref(func, params, inputs)
-    #a_shape = [1, 2, 4]
-    #b_shape = [1, 3, 4]
-    #inputs = {
-    #    "a": tvm.nd.array(np.random.uniform(-128, 127, a_shape).astype(dtype)),
-    #    "b": tvm.nd.array(np.random.uniform(-128, 127, b_shape).astype(dtype)),
-    #}
-    #func, params = _get_model(
-    #    a_shape=a_shape,
-    #    b_shape=b_shape,
-    #    dtype=dtype,
-    #    var_names=iter(inputs),
-    #    is_a_constant=False,
-    #    is_b_constant=False,
-    #)
-    #compare_inference_with_ref(func, params, inputs)
-    ###dtype = "float32"
-
-    #### C[N, I, J] = A[N, I, K] * B[N, J, K]
-    ###shapes_config = [
-    ###    # B, I, J, K
-    ###    [1, 4, 4, 3],
-    ###    [1, 16, 32, 32],
-    ###    [2, 1, 1, 3],
-    ###    [2, 16, 32, 32],
-    ###    [5, 1, 1, 3],
-    ###]
-    ###data_config = [
-    ###    # A_is_constant, B_is_constant
-    ###    [False, True],
-    ###    [True, False],
-    ###    [False, False],
-    ###]
-
-    ###for N, I, J, K in shapes_config:
-    ###    a_shape = [N, I, K]
-    ###    b_shape = [N, J, K]
-    ###    for is_a_constant, is_b_constant in data_config:
-    ###        outputs = []
-    ###        inputs = {
-    ###            "a": tvm.nd.array(np.random.uniform(-128, 127, a_shape).astype(dtype)),
-    ###            "b": tvm.nd.array(np.random.uniform(-128, 127, b_shape).astype(dtype)),
-    ###        }
-    ###        func, params = _get_model(
-    ###            a_shape,
-    ###            b_shape,
-    ###            dtype,
-    ###            var_names=iter(inputs),
-    ###            is_a_constant=is_a_constant,
-    ###            is_b_constant=is_b_constant,
-    ###        )
-    ###        for enable_bnns in [False, True]:
-    ###            outputs.append(
-    ###                build_and_run(
-    ###                    func,
-    ###                    inputs,
-    ###                    1,
-    ###                    params,
-    ###                    device,
-    ###                    enable_bnns=enable_bnns,
-    ###                )[0]
-    ###            )
-
-    ###        config = {
-    ###            "a_shape": a_shape,
-    ###            "b_shape": b_shape,
-    ###            "dtype": dtype,
-    ###        }
-    ###        verify(outputs, atol=0.001, rtol=0.01, config=config)
 
 
 if __name__ == "__main__":

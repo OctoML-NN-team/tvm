@@ -87,65 +87,63 @@ def _register_external_op_helper(op_name, supported=True):
     return _func_wrapper
 
 
-def dtype_is_supported(dtype):
-    """Check if data type is supported by MPS backend"""
-    return dtype in ("", "float32")
+_register_external_op_helper("nn.batch_matmul")
 
 
-@tvm.ir.register_op_attr("nn.conv2d", "target.mps")
-def conv2d_check(expr):
-    """Check if the conv2d can be executed in MPS"""
-    attrs, args = expr.attrs, expr.args
-    data_typ = args[0].checked_type
-    print("\n\n\n\n\n 1. mps_pattert_table\n\n\n\n")
-    if len(data_typ.shape) != 4 or data_typ.dtype != "float32":
-        return False
-    if not isinstance(args[1], tvm.relay.expr.Constant):
-        return False
-    kernel_typ = args[1].checked_type
-    if len(kernel_typ.shape) != 4 or kernel_typ.dtype != "float32":
-        return False
-    if attrs.data_layout != "NCHW":
-        return False
-    if not dtype_is_supported(attrs.out_dtype):
-        return False
-    print("\n\n\n\n\n 2. mps_pattert_table\n\n\n\n")
-    return True
-
-
-def make_conv_pattern(with_bias=True, activation="none"):
-    """Make pattern for mps.conv2d primitive"""
-    data = wildcard()
-    weight = wildcard()
-    bias = wildcard()
-    pat = is_op("nn.conv2d")(data, weight)
-    if with_bias:
-        pat = is_op("add")(pat, bias) | is_op("nn.bias_add")(pat, bias)
-    if activation == "relu":
-        pat = is_op("nn.relu")(pat)
-    elif activation == "sigmoid":
-        pat = is_op("sigmoid")(pat)
-    return pat
-
-
-def check_conv(extract):
-    """Check conv pattern is supported by MPS."""
-    call = extract
-    while call.op.name != "nn.conv2d":
-        call = call.args[0]
-    return conv2d_check(call)
+#def dtype_is_supported(dtype):
+#    """Check if data type is supported by MPS backend"""
+#    return dtype in ("", "float32")
+#
+#
+#@tvm.ir.register_op_attr("nn.conv2d", "target.mps")
+#def conv2d_check(expr):
+#    """Check if the conv2d can be executed in MPS"""
+#    attrs, args = expr.attrs, expr.args
+#    data_typ = args[0].checked_type
+#    print("\n\n\n\n\n 1. mps_pattert_table\n\n\n\n")
+#    if len(data_typ.shape) != 4 or data_typ.dtype != "float32":
+#        return False
+#    if not isinstance(args[1], tvm.relay.expr.Constant):
+#        return False
+#    kernel_typ = args[1].checked_type
+#    if len(kernel_typ.shape) != 4 or kernel_typ.dtype != "float32":
+#        return False
+#    if attrs.data_layout != "NCHW":
+#        return False
+#    if not dtype_is_supported(attrs.out_dtype):
+#        return False
+#    print("\n\n\n\n\n 2. mps_pattert_table\n\n\n\n")
+#    return True
+#
+#
+#def make_conv_pattern(with_bias=True, activation="none"):
+#    """Make pattern for mps.conv2d primitive"""
+#    data = wildcard()
+#    weight = wildcard()
+#    bias = wildcard()
+#    pat = is_op("nn.conv2d")(data, weight)
+#    if with_bias:
+#        pat = is_op("add")(pat, bias) | is_op("nn.bias_add")(pat, bias)
+#    if activation == "relu":
+#        pat = is_op("nn.relu")(pat)
+#    elif activation == "sigmoid":
+#        pat = is_op("sigmoid")(pat)
+#    return pat
+#
+#
+#def check_conv(extract):
+#    """Check conv pattern is supported by MPS."""
+#    call = extract
+#    while call.op.name != "nn.conv2d":
+#        call = call.args[0]
+#    return conv2d_check(call)
 
 
 @register_pattern_table("mps")
 def pattern_table():
     """Get MPS specific fusing patterns collection"""
-    conv2d_pat = (
-        "mps.conv2d",
-        make_conv_pattern(with_bias=False),
-        check_conv,
-    )
     mps_patterns = [
-        conv2d_pat,
+        #conv2d_pat,
     ]
     return mps_patterns
 
