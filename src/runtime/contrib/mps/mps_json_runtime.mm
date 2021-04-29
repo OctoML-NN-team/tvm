@@ -132,8 +132,8 @@ class MPSJSONRuntime : public JSONRuntimeBase {
       //                                           dataType:dtype];
       auto mw = metal::MetalWorkspace::Global();
       // TODO: It will be necessary to understand id of device!!!
-      DLContext ctx = {kDLMetal, 0};
-      id<MTLDevice> device = mw->GetDevice(ctx);
+      Device dev = {kDLMetal, 0};
+      id<MTLDevice> device = mw->GetDevice(dev);
       if (data != nullptr) {
         id<MTLBuffer>buf = [device newBufferWithBytes:data length:dlshape[0] * dlshape[1] * dlshape[2] * sizeof(dtype) options:MTLResourceStorageModeShared];
         matrix_eid_[entry.id_] = [[MPSMatrix alloc] initWithBuffer:buf descriptor:desc];
@@ -199,7 +199,7 @@ class MPSJSONRuntime : public JSONRuntimeBase {
    int dstIdx = dst_entry.id_;
    auto matmul = [aIdx, bIdx, dstIdx, this]() {
     auto mw = metal::MetalWorkspace::Global();
-    id<MTLDevice> device = mw->GetDevice(data_entry_[0]->ctx);
+    id<MTLDevice> device = mw->GetDevice(data_entry_[0]->device);
     id<MTLCommandQueue> cq = [device newCommandQueue];
     id<MTLCommandBuffer> cb = [cq commandBuffer];
 

@@ -51,7 +51,7 @@ import pytest
 from tvm.relay.analysis import analysis
 from itertools import zip_longest, combinations
 from tvm.relay.op.contrib.mps import partition_for_mps
-from tvm.contrib import graph_runtime
+from tvm.contrib import graph_executor
 
 
 def verify(answers, atol, rtol, verify_saturation=False, config=None):
@@ -127,8 +127,7 @@ def build_and_run(
     #lib = update_lib(lib, device.device, device.cross_compile)
     #gen_module = graph_runtime.GraphModule(lib["default"](device.device.cpu(0)))
     ctx = tvm.metal()
-    print('>>>>>>>>>> HERE ')
-    gen_module = graph_runtime.GraphModule(lib["default"](ctx))
+    gen_module = graph_executor.GraphModule(lib["default"](ctx))
     print('before set_input: ', gen_module.get_input(0))
     gen_module.set_input(**inputs)
     print('after set_input: ', gen_module.get_input(0))
@@ -152,7 +151,6 @@ def compare_inference_with_ref(func, params, inputs, atol=0.002, rtol=0.007):
     outputs = []
     for bnns in [False, True]:
         outputs.append(build_and_run(func, inputs, 1, params, enable_bnns=bnns)[0])
-    #outputs.append(build_and_run(func, inputs, 1, params, enable_bnns=True)[0])
 
     # Compare result tensors
     verify(outputs, atol=atol, rtol=rtol)
