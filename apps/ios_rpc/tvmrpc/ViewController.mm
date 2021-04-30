@@ -38,6 +38,7 @@
   self.proxyKey.delegate = self;
   
   [self readPreferences];
+  [self open];
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
@@ -65,9 +66,9 @@
 - (void)open {
   NSLog(@"Connecting to the tracker server..");
   
-  std::string key_ = [self.proxyKey.text UTF8String];
-  std::string url_ = [self.proxyURL.text UTF8String];
-  int port_ = [self.proxyPort.text intValue];
+  std::string key_ = "i12";//[self.proxyKey.text UTF8String];
+  std::string url_ = "192.168.0.92";//[self.proxyURL.text UTF8String];
+  int port_ = 9190;//[self.proxyPort.text intValue];
 
   std::ostringstream ss;
   ss << "('" << url_ << "', " << port_<< ")";
@@ -80,7 +81,9 @@
   std::string work_dir = [NSTemporaryDirectory() UTF8String];
   
   // Start the rpc server
-  rpc_ = std::make_shared<tvm::runtime::RPCServer>(host, port, port_end, tracker_addr, key_, custom_addr, work_dir);
+  rpc_ = std::make_shared<tvm::runtime::RPCServer>(host, port, port_end, tracker_addr, key_,
+//  rpc_ = std::make_shared<tvm::runtime::RPCServer>(host, port, port_end, "192.168.0.92:9190", "i12",
+                                                   custom_addr, work_dir);
   rpc_->setCompletionCallbacks(
     [self] () {
       dispatch_sync(dispatch_get_main_queue(), ^{
