@@ -110,7 +110,6 @@ def build_and_run(
     target_host = "llvm -mtriple=x86_64-apple-darwin20.1.0"
 
     try:
-        #lib = build_module(mod, device.target, params, enable_bnns, tvm_ops)
         lib = build_module(mod, target, target_host, params, enable_bnns, tvm_ops)
     except Exception as e:
         err_msg = "The module could not be built.\n"
@@ -119,10 +118,6 @@ def build_and_run(
         err_msg += str(e)
         raise Exception(err_msg)
 
-    #lib_name = "mod.so"
-    #lib.export_library(lib_name)
-    #lib = update_lib(lib, device.device, device.cross_compile)
-    #gen_module = graph_runtime.GraphModule(lib["default"](device.device.cpu(0)))
     ctx = tvm.metal()
     gen_module = graph_executor.GraphModule(lib["default"](ctx))
     gen_module.set_input(**inputs)

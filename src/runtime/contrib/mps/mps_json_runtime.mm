@@ -59,33 +59,33 @@ class MPSJSONRuntime : public JSONRuntimeBase {
  public:
   MPSJSONRuntime(const std::string& symbol_name, const std::string& graph_json,
                   const Array<String> const_names)
-      : JSONRuntimeBase(symbol_name, graph_json, const_names) {}
+      : JSONRuntimeBase(symbol_name, graph_json, const_names) {
+          //std::cout << "MPSJSONRUNTIME:: ctor" << std::endl;
+      }
 
   const char* type_key() const override { return "mps_json"; }
 
   void Init(const Array<NDArray>& consts) override {
+      //std::cout << "MPSJSONRuntime::Init" << std::endl;
+    //@autoreleasepool {
     ICHECK_EQ(consts.size(), const_idx_.size())
         << "The number of input constants must match the number of required.";
 
     SetupConstants(consts);
     BindInputsAndOutputs();
-    //AllocateIntermediateTensors();
     BuildEngine();
+    //}
   }
 
   void Run() override {
+          static int counter = 0;
+          counter++;
+      std::cout << counter << ". Run, " << matrix_eid_.size() << std::endl;
+    @autoreleasepool {
     // Wrap external handler into MPS tensor representation
     auto bind_ext_hdl_to_tensor = [this](uint32_t eid) {
       id<MTLBuffer> buf = (id<MTLBuffer>)data_entry_[eid]->data;
-      auto matrix = matrix_eid_[eid];
-      MPSMatrixDescriptor* md =
-          [MPSMatrixDescriptor matrixDescriptorWithRows:matrix.rows
-                                                columns:matrix.columns
-                                               matrices:matrix.matrices
-                                               rowBytes:matrix.rowBytes
-                                            matrixBytes:matrix.matrixBytes
-                                               dataType:matrix.dataType];
-      [matrix initWithBuffer:buf descriptor:md];
+      matrix_eid_[eid] = [[MPSMatrix alloc] initWithBuffer:buf descriptor:matrix_desc_eid_[eid]];
     };
 
     // Bind all input/output external data object into internal abstractions
@@ -100,6 +100,8 @@ class MPSJSONRuntime : public JSONRuntimeBase {
       auto cb = getCb();
       [cb commit];
       [cb waitUntilCompleted];
+      [cb release];
+    }
     }
   }
 
@@ -108,6 +110,7 @@ class MPSJSONRuntime : public JSONRuntimeBase {
   void BindInputsAndOutputs() {
       image_eid_.resize(data_entry_.size());
       matrix_eid_.resize(data_entry_.size());
+      matrix_desc_eid_.resize(data_entry_.size());
     auto createTensor = [&](JSONGraphNodeEntry entry) {
       auto node = nodes_[entry.id_];
       auto dlshape = node.GetOpShape()[entry.index_];
@@ -116,26 +119,29 @@ class MPSJSONRuntime : public JSONRuntimeBase {
       if (data_entry_[entry.id_] != nullptr) data = data_entry_[entry.id_]->data;
 
       MPSDataType dtype = MPSDataTypeFloat32;
-      MPSMatrixDescriptor* desc =
+      matrix_desc_eid_[entry.id_] =
           [MPSMatrixDescriptor matrixDescriptorWithRows:dlshape[1]
                                                 columns:dlshape[2]
                                                matrices:dlshape[0]
                                                rowBytes:dlshape[2] * sizeof(dtype)
                                             matrixBytes:dlshape[2] * dlshape[1] * sizeof(dtype)
                                                dataType:dtype];
-      //[MPSMatrixDescriptor matrixDescriptorWithDimensions:dlshape[1]
-      //                                            columns:dlshape[2]
-      //                                           rowBytes:dlshape[2] * sizeof(dtype)
-      //                                           dataType:dtype];
       auto mw = metal::MetalWorkspace::Global();
       // TODO: It will be necessary to understand id of device!!!
-      Device dev = {kDLMetal, 0};
-      id<MTLDevice> device = mw->GetDevice(dev);
       if (data != nullptr) {
+          static int counter = 0;
+          counter++;
+      if (data_entry_[entry.id_]->device.device_type == kDLMetal)
+          std::cout << counter << ". BIAO: metal: " << data_entry_[entry.id_]->device.device_type << std::endl;
+      else
+          std::cout << counter << ". BIAO: something else: " << data_entry_[entry.id_]->device.device_type << std::endl;
+        Device dev = {kDLMetal, 0};
+        id<MTLDevice> device = mw->GetDevice(dev);
         id<MTLBuffer>buf = [device newBufferWithBytes:data length:dlshape[0] * dlshape[1] * dlshape[2] * sizeof(dtype) options:MTLResourceStorageModeShared];
-        matrix_eid_[entry.id_] = [[MPSMatrix alloc] initWithBuffer:buf descriptor:desc];
-      } else {
-        matrix_eid_[entry.id_] = [[MPSMatrix alloc] initWithDevice:device descriptor:desc];
+        matrix_eid_[entry.id_] = [[MPSMatrix alloc] initWithBuffer:buf descriptor:matrix_desc_eid_[entry.id_]];
+        //id<MTLBuffer> buf = (id<MTLBuffer>)data;
+        //matrix_eid_[entry.id_] = [[MPSMatrix alloc] initWithBuffer:buf descriptor:matrix_desc_eid_[entry.id_]];
+        //[buf release];
       }
     };
 
@@ -147,20 +153,6 @@ class MPSJSONRuntime : public JSONRuntimeBase {
     for (auto entry : outputs_) {
       createTensor(entry);
     }
-  }
-
-  /** Allocate intermediate tensors */
-  void AllocateIntermediateTensors() {
-    //for (int i = 0; i < nodes_.size(); ++i) {
-    //  auto eid = JSONGraphNodeEntry(i, 0);
-    //  if (tensors_eid_[eid.id_] != nullptr) continue;
-    //  auto node = nodes_[i];
-    //  auto dlshape = node.GetOpShape()[0];
-    //  auto dltype = node.GetOpDataType()[0];
-    //  tensors_eid_[eid.id_] = std::make_shared<BNNS::Tensor>(
-    //      BNNS::Shape{dlshape.begin(), dlshape.end()}, convertToBNNS(dltype), nullptr);
-    //  tensors_eid_[eid.id_]->allocate_memory();
-    //}
   }
 
   // Build up the engine based on the input graph.
@@ -194,7 +186,9 @@ class MPSJSONRuntime : public JSONRuntimeBase {
    int dstIdx = dst_entry.id_;
    auto matmul = [aIdx, bIdx, dstIdx, this]() {
     auto mw = metal::MetalWorkspace::Global();
-    id<MTLDevice> device = mw->GetDevice(data_entry_[0]->device);
+       Device dev = {kDLMetal, 0};
+    //id<MTLDevice> device = mw->GetDevice(data_entry_[0]->device);
+       id<MTLDevice> device = mw->GetDevice(dev);
     id<MTLCommandQueue> cq = [device newCommandQueue];
     id<MTLCommandBuffer> cb = [cq commandBuffer];
 
@@ -208,7 +202,8 @@ class MPSJSONRuntime : public JSONRuntimeBase {
                                                        alpha:1.0f
                                                         beta:0.0f];
 
-    [sgemm encodeToCommandBuffer:cb leftMatrix:matrix_eid_[aIdx] rightMatrix:matrix_eid_[bIdx] resultMatrix:matrix_eid_[dstIdx]];
+     [sgemm encodeToCommandBuffer:cb leftMatrix:matrix_eid_[aIdx] rightMatrix:matrix_eid_[bIdx] resultMatrix:matrix_eid_[dstIdx]];
+    //[mul_obj release];
     return cb;
    };
    cbf.push_back(matmul);
@@ -224,6 +219,7 @@ class MPSJSONRuntime : public JSONRuntimeBase {
   //std::vector<TensorPtr> tensors_eid_;
   std::vector<MPSImage*> image_eid_;
   std::vector<MPSMatrix*> matrix_eid_;
+  std::vector<MPSMatrixDescriptor*> matrix_desc_eid_;
 };
 
 runtime::Module MPSJSONRuntimeCreate(String symbol_name, String graph_json,

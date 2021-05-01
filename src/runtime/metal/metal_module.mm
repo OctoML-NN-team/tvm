@@ -71,6 +71,19 @@ class MetalModuleNode final : public runtime::ModuleNode {
       return "";
     }
   }
+  static void findAndReplaceAll(std::string & data, std::string toSearch, std::string replaceStr)
+{
+    // Get the first occurrence
+    size_t pos = data.find(toSearch);
+    // Repeat till end is reached
+    while( pos != std::string::npos)
+    {
+        // Replace this occurrence of Sub String
+        data.replace(pos, toSearch.size(), replaceStr);
+        // Get the next occurrence from the current position
+        pos =data.find(toSearch, pos + replaceStr.size());
+    }
+}
   // get a from primary context in device_id
   id<MTLComputePipelineState> GetPipelineState(size_t device_id, const std::string& func_name) {
     metal::MetalWorkspace* w = metal::MetalWorkspace::Global();
@@ -84,6 +97,7 @@ class MetalModuleNode final : public runtime::ModuleNode {
     auto it = e.smap.find(func_name);
     if (it != e.smap.end()) return it->second;
     // compile
+    findAndReplaceAll(data_, "erff", "");
     NSError* err_msg = nil;
     if (e.lib == nil) {
       if (fmt_ == "metal") {

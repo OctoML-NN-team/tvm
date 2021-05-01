@@ -157,7 +157,7 @@ TVM_REGISTER_GLOBAL("tvm.contrib.mps.conv2d").set_body([](TVMArgs args, TVMRetVa
 
   [cb commit];
   id<MTLBlitCommandEncoder> encoder = [cb blitCommandEncoder];
-  [encoder synchronizeResource:tempC.texture];
+  //[encoder synchronizeResource:tempC.texture];
   [encoder endEncoding];
   [cb waitUntilCompleted];
 
