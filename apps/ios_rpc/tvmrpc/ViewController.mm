@@ -67,7 +67,7 @@
   NSLog(@"Connecting to the tracker server..");
   
   std::string key_ = "i12";//[self.proxyKey.text UTF8String];
-  std::string url_ = "192.168.0.92";//[self.proxyURL.text UTF8String];
+  std::string url_ = "192.168.0.201";//[self.proxyURL.text UTF8String];
   int port_ = 9190;//[self.proxyPort.text intValue];
 
   std::ostringstream ss;
