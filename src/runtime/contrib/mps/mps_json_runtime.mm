@@ -98,9 +98,10 @@ class MPSJSONRuntime : public JSONRuntimeBase {
 
     for (auto getCb : cbf) {
       auto cb = getCb();
-      [cb commit];
-      [cb waitUntilCompleted];
-      [cb release];
+      [cb.second commit];
+      [cb.second waitUntilCompleted];
+      [cb.second release];
+      [cb.first release];
     }
     }
   }
@@ -204,14 +205,15 @@ class MPSJSONRuntime : public JSONRuntimeBase {
 
      [sgemm encodeToCommandBuffer:cb leftMatrix:matrix_eid_[aIdx] rightMatrix:matrix_eid_[bIdx] resultMatrix:matrix_eid_[dstIdx]];
     //[mul_obj release];
-    return cb;
+    return std::make_pair(cq, cb);
    };
    cbf.push_back(matmul);
   }
 
   /** Collection of all primitives in topological order */
   std::vector<id<MTLCommandBuffer>> commandBuffers_;
-  using CommandBufferFunctor = std::function<id<MTLCommandBuffer>()>;
+  using BuffAndQueue = std::pair<id<MTLCommandQueue>, id<MTLCommandBuffer>>;
+  using CommandBufferFunctor = std::function<BuffAndQueue()>;
   std::vector<CommandBufferFunctor> cbf;
 
   /** Vector with BNNS tensors. Index of tensor matched with
