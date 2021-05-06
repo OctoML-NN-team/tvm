@@ -24,6 +24,7 @@ if(USE_METAL)
   list(APPEND RUNTIME_SRCS ${RUNTIME_METAL_SRCS})
 
   if(USE_MPS)
+    message(STATUS "Build with MPS JSON runtime")
     file(GLOB MPS_RELAY_CONTRIB_SRC src/relay/backend/contrib/mps/*.cc)
     list(APPEND COMPILER_SRCS ${MPS_RELAY_CONTRIB_SRC})
     list(APPEND COMPILER_SRCS ${JSON_RELAY_CONTRIB_SRC})

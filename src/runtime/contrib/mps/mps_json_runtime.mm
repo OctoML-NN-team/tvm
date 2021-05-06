@@ -148,11 +148,11 @@ class MPSJSONRuntime : public JSONRuntimeBase {
 
     for (auto& id : input_nodes_) {
       auto entry = JSONGraphNodeEntry(id, 0);
-      createTensor(entry);
+      //createTensor(entry);
     }
 
     for (auto entry : outputs_) {
-      createTensor(entry);
+      //createTensor(entry);
     }
   }
 
@@ -163,10 +163,10 @@ class MPSJSONRuntime : public JSONRuntimeBase {
       const auto& node = nodes_[nid];
       if (node.GetOpType() == "kernel") {
         auto op_name = node.GetOpName();
-        /*if ("nn.conv2d" == op_name) {
-          Conv2d(nid);
-        } else*/ if ("nn.batch_matmul" == op_name) {
+        if ("nn.batch_matmul" == op_name) {
           MatMul(nid);
+        } else if ("nn.dense" == op_name) {
+            std::cout << "BuildEngine:: dense" << std::endl;
         } else {
           LOG(FATAL) << "Unsupported op: " << op_name;
         }

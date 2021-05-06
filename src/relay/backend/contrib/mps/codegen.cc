@@ -85,7 +85,8 @@ class MPSJSONSerializer : public backend::contrib::JSONSerializer {
       name = comp.value();
 
       auto body = fn->body.as<CallNode>();
-      if (name == "mps.conv2d") {
+      if (name == "mps.dense") {
+          std::cout << " >>> MPS dense!" << std::endl;
         //auto add_op_type = IsOp(body, "add") ? "add" : "nn.bias_add";
         //call = GetRootCall(body, 1, {"nn.conv2d"});
         call = body;
