@@ -16,6 +16,7 @@
 # under the License.
 
 from itertools import zip_longest, combinations
+import time
 import json
 import os
 from enum import Enum
@@ -163,7 +164,7 @@ def build_and_run(
     params,
     device,
     enable_bnns=True,
-    no_runs=1,
+    no_runs=10,
     tvm_ops=0,
     config=None,
 ):
@@ -184,9 +185,13 @@ def build_and_run(
     gen_module = graph_executor.GraphModule(loaded_lib["default"](device.device.cpu(0)))
     gen_module.set_input(**inputs)
     out = []
+    times = []
     for _ in range(no_runs):
+        start_time = time.time()
         gen_module.run()
+        times.append((time.time() - start_time) * 1000)
         out.append([gen_module.get_output(i) for i in range(outputs)])
+    print(f"{'BNNS' if enable_bnns else 'No BNNS'} elapsed time: {np.mean(times)} ms")
     return out
 
 
