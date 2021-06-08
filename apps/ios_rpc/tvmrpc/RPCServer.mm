@@ -468,6 +468,7 @@ static void handleConnect(CFSocketRef socket, CFSocketCallBackType type, CFDataR
 
 - (void)onEndEvent {
   [self close];
+  close(socket_);
   [self notifyState:RPCServerStatus_RPCSessionFinished];
 }
 
