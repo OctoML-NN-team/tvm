@@ -15,17 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# pylint: disable=wildcard-import
-"""Relay op strategies."""
+# pylint: disable=redefined-builtin, wildcard-import
+"""Intel Gen11 GPU specific declaration and schedules."""
 from __future__ import absolute_import as _abs
 
-from .generic import *
-from . import x86
-from . import arm_cpu
-from . import cuda
-from . import hls
-from . import mali
-from . import bifrost
-from . import rocm
-from . import intel_graphics
-from . import IrisXe
+from .conv2d import *
+from . import conv2d_alter_op
+from .depthwise_conv2d import *

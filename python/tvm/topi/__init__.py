@@ -53,6 +53,7 @@ from . import arm_cpu
 from . import mali
 from . import bifrost
 from . import intel_graphics
+from . import IrisXe
 from . import utils
 from . import rocm
 from . import vision
