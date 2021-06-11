@@ -1,23 +1,4 @@
 // !$*UTF8*$!
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
 {
 	archiveVersion = 1;
 	classes = {
@@ -243,6 +224,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 				Base,
 			);
@@ -370,6 +352,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_BITCODE = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -422,6 +405,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_BITCODE = NO;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -452,7 +436,7 @@
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
-				DEVELOPMENT_TEAM = 3FR42MXLK9;
+				DEVELOPMENT_TEAM = B2Q598A43U;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"USE_CUSTOM_DSO_LOADER=${USE_CUSTOM_DSO_LOADER}",
@@ -473,8 +457,8 @@
 				OTHER_LDFLAGS = "${_DSO_LOADER_NAME_${USE_CUSTOM_DSO_LOADER}}";
 				PRODUCT_BUNDLE_IDENTIFIER = org.apache.tvmrpc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TVM_BUILD_DIR = "path-to-tvm-ios-build-folder";
-				USE_CUSTOM_DSO_LOADER = 0;
+				TVM_BUILD_DIR = /Users/agladyshev/workspace/tvm/build_ios;
+				USE_CUSTOM_DSO_LOADER = 1;
 				WARNING_CFLAGS = "-Wno-shorten-64-to-32";
 				_DSO_LOADER_NAME_0 = "";
 				_DSO_LOADER_NAME_1 = "-lmacho_dyld";
@@ -488,7 +472,7 @@
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
-				DEVELOPMENT_TEAM = 3FR42MXLK9;
+				DEVELOPMENT_TEAM = B2Q598A43U;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"USE_CUSTOM_DSO_LOADER=${USE_CUSTOM_DSO_LOADER}",
@@ -509,8 +493,8 @@
 				OTHER_LDFLAGS = "${_DSO_LOADER_NAME_${USE_CUSTOM_DSO_LOADER}}";
 				PRODUCT_BUNDLE_IDENTIFIER = org.apache.tvmrpc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TVM_BUILD_DIR = "path-to-tvm-ios-build-folder";
-				USE_CUSTOM_DSO_LOADER = 0;
+				TVM_BUILD_DIR = /Users/agladyshev/workspace/tvm/build_ios;
+				USE_CUSTOM_DSO_LOADER = 1;
 				WARNING_CFLAGS = "-Wno-shorten-64-to-32";
 				_DSO_LOADER_NAME_0 = "";
 				_DSO_LOADER_NAME_1 = "-lmacho_dyld";
