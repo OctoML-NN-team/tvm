@@ -25,7 +25,7 @@ from .infrastructure import (
     get_run_modes,
     check_test_parameters,
     compare_inference_with_ref,
-    generate_trials
+    generate_trials,
 )
 
 # TODO: Missed cases
@@ -152,6 +152,7 @@ def test_conv2d(mode):
 
 @pytest.mark.parametrize("mode", get_run_modes())
 def test_conv2d_dw(mode):
+    check_test_parameters(mode)
     np.random.seed(0)
     shape = [4, 5, 5]
 
@@ -162,6 +163,7 @@ def test_conv2d_dw(mode):
 
 @pytest.mark.parametrize("mode", get_run_modes())
 def test_conv2d_with_oc1(mode):
+    check_test_parameters(mode)
     np.random.seed(0)
     shape = [3, 5, 5]
 

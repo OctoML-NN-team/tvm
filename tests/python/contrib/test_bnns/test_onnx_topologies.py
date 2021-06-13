@@ -16,7 +16,6 @@
 # under the License.
 """BNNS pattern detection check"""
 
-import onnx
 import pytest
 import itertools
 import numpy as np
@@ -33,11 +32,14 @@ from .infrastructure import (
     get_run_modes,
     check_test_parameters,
     build_and_run,
-    verify
+    verify,
 )
 
 
-DTYPE = 'float32'
+onnx = pytest.importorskip("onnx")
+
+
+DTYPE = "float32"
 INPUT_SHAPE = [1, 3, 224, 224]
 
 BASE_MODEL_URL = "https://github.com/onnx/models/raw/master/"
@@ -66,7 +68,7 @@ def get_model_url(model_name):
 
 
 def get_name_from_url(url):
-    return url[url.rfind("/") + 1:].strip()
+    return url[url.rfind("/") + 1 :].strip()
 
 
 def find_of_download(model_name):
