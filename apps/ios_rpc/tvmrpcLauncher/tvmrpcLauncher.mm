@@ -23,24 +23,47 @@
  */
 
 #import <XCTest/XCTest.h>
-#import "TVMRuntime.h"
+#import "RPCArgs.h"
+#import "RPCServer.h"
+
+@interface EventListenerWrapper : NSObject <RPCServerEventListener>
+@end
+
+@implementation EventListenerWrapper {
+  void (^blk_)(RPCServerStatus);
+}
+
+- (instancetype)initWithBlock:(void (^)(RPCServerStatus))blk {
+  blk_ = blk;
+  return self;
+}
+
+- (void)onError:(NSString*)msg {
+}
+- (void)onStatusChanged:(RPCServerStatus)status {
+  blk_(status);
+}
+// void (^disable)(UITextField* field) = ^(UITextField* field) {
+@end
 
 @interface tvmrpcLauncher : XCTestCase
-
 @end
 
 @implementation tvmrpcLauncher
 
-- (void)setUp {
-  [super setUp];
-}
-
-- (void)tearDown {
-  [super tearDown];
-}
-
 - (void)testRPC {
-  [TVMRuntime launchSyncServer];
+  RPCArgs args = get_current_rpc_args();
+
+  RPCServer* server = [RPCServer serverWithMode:static_cast<RPCServerMode>(args.server_mode)];
+  server.host = @(args.host_url);
+  server.port = args.host_port;
+  server.key = @(args.key);
+
+  server.delegate = [[EventListenerWrapper alloc] initWithBlock:^(RPCServerStatus sts) {
+    NSLog(@"Sts : %d", sts);
+  }];
+
+  [server start];
 }
 
 @end
