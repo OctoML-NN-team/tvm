@@ -34,6 +34,9 @@ from tvm.autotvm.measure import request_remote
 from tvm.relay.analysis import analysis
 
 
+n = 0
+
+
 class Device:
     """
     Common device configuration for python tests.
@@ -200,7 +203,9 @@ def build_and_run(
 
 def update_lib(lib, device, fcompile):
     """Export the library to the remote/local device."""
-    lib_name = "mod.dylib"
+    global n
+    lib_name = f"mod{n}.dylib"
+    n += 1
     temp = utils.tempdir()
     lib_path = temp.relpath(lib_name)
     lib.export_library(lib_path, fcompile=fcompile)
