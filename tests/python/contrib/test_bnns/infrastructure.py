@@ -79,11 +79,13 @@ class Device:
         TVM_TRACKER_HOST = "TVM_TRACKER_HOST"
         TVM_TRACKER_PORT = "TVM_TRACKER_PORT"
         TVM_REMOTE_DEVICE_KEY = "TVM_REMOTE_DEVICE_KEY"
+        TVM_ARM64_SDK = "TVM_ARM64_SDK"
         TVM_RUN_COMPLEXITY_TEST = "TVM_RUN_COMPLEXITY_TEST"
 
     host = os.environ.get(EnvironmentVariables.TVM_TRACKER_HOST.value)
     port = int(os.environ.get(EnvironmentVariables.TVM_TRACKER_PORT.value) or 0) or None
     device_key = os.environ.get(EnvironmentVariables.TVM_REMOTE_DEVICE_KEY.value)
+    arm64_sdk = os.environ.get(EnvironmentVariables.TVM_ARM64_SDK.value)
 
     def __init__(self, connection_type):
         """Keep remote device for lifetime of object."""
@@ -99,7 +101,7 @@ class Device:
         if self.connection_type == Device.ConnectionType.TRACKER:
             self.target = "llvm -mtriple=arm64-apple-darwin"
             self.fcompile = lambda output, objects, **kwargs: xcode.create_dylib(
-                output, objects, arch="arm64", sdk="iphoneos"
+                output, objects, arch="arm64", sdk=self.arm64_sdk
             )
         else:
             self.target = "llvm"
@@ -112,7 +114,7 @@ class Device:
         def ok(attr):
             return attr is not None
 
-        return ok(cls.host) and ok(cls.port) and ok(cls.device_key)
+        return ok(cls.host) and ok(cls.port) and ok(cls.device_key) and ok(cls.arm64_sdk)
 
     def _get_remote(self):
         """Get a remote (or local) device to use for testing."""
