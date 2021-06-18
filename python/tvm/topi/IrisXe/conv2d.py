@@ -40,24 +40,36 @@ def _get_default_config(cfg, data, kernel, strides, padding, out_dtype, is_depth
     else:
         stride_h, stride_w = strides, strides
 
-    out_height = simplify((ih - kernel_height + pad_top + pad_down) // stride_h + 1)
-    out_width = simplify((iw - kernel_width + pad_left + pad_right) // stride_w + 1)
-
-    oc_bn, oc_bn_upper = 1, 16
+    oc_bn, oc_bn_upper = 1, 8
     for i in range(oc_bn_upper, 0, -4):
         if num_filter % i == 0:
             oc_bn = i
             break
 
-    ic_bn, ic_bn_upper = 1, 16
+    ic_bn, ic_bn_upper = 1, 8
     for i in range(ic_bn_upper, 0, -4):
         if in_channel % i == 0:
             ic_bn = i
             break
 
-    block_oh = 2
-    block_ow = 2
-
+    if stride_h == 2:
+        if num_filter + kernel_height == 515:
+            block_oh = 4
+            block_ow = 4
+        else:
+            block_oh = 4
+            block_ow = 5
+    elif kernel_height == 3:
+        if num_filter == 512:
+            block_oh = 2
+            block_ow = 7
+        else:
+            block_oh = 2
+            block_ow = 14
+    else:
+        block_oh = 1
+        block_ow = 16
+    
     cfg["tile_ic"] = ic_bn
     cfg["tile_oc"] = oc_bn
     cfg["block_oh"] = OtherOptionEntity(block_oh)
@@ -298,15 +310,14 @@ def _schedule_cl_spatialpack_NCHWc(cfg, s, op):
     elif isinstance(kernel_vec.op, tvm.te.ComputeOp) and kernel_vec.name == "kernel_vec":
         # data and kernel are not pre-computed, schedule layout transform here.
         # TODO(@Laurawly): Add schedule for data and kernel pack
-        print("qqq")
         pass
 
     OUTPUT_BLOCK_HEIGHT = cfg["block_oh"].val
     OUTPUT_BLOCK_WIDTH = cfg["block_ow"].val
 
     # schedule conv
-    z_factor = 1
-    y_factor = 1
+    z_factor = 2
+    y_factor = 16
     x_factor = 16
     thread_z = te.thread_axis((0, z_factor), "threadIdx.z")
     thread_y = te.thread_axis((0, y_factor), "threadIdx.y")
@@ -344,8 +355,8 @@ def _schedule_cl_spatialpack_NCHWc(cfg, s, op):
 
     # schedule temp_W
     _, ci, h, w, vci = s[temp_W].op.axis
-    zo, zi = s[temp_W].split(vci, 1)
-    yo, yi = s[temp_W].split(h, 1)
+    zo, zi = s[temp_W].split(vci, 2)
+    yo, yi = s[temp_W].split(h, 16)
     xo, xi = s[temp_W].split(w, 16)
     s[temp_W].reorder(zo, yo, xo, zi, yi, xi)
     s[temp_W].bind(zi, thread_z)
