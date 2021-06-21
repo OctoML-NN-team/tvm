@@ -46,12 +46,12 @@ BASE_MODEL_URL = "https://github.com/onnx/models/raw/master/"
 MODEL_URL_COLLECTION = {
     # "BERT": "text/machine_comprehension/bert-squad/model/bertsquad-10.onnx",
     "MobileNet-v2": "vision/classification/mobilenet/model/mobilenetv2-7.onnx",
-    "ResNet50-v1": "vision/classification/resnet/model/resnet50-v1-7.onnx",
-    "ResNet50-v2": "vision/classification/resnet/model/resnet50-v2-7.onnx",
+    # "ResNet50-v1": "vision/classification/resnet/model/resnet50-v1-7.onnx",
+    # "ResNet50-v2": "vision/classification/resnet/model/resnet50-v2-7.onnx",
     # "SqueezeNet-v1.1": "vision/classification/squeezenet/model/squeezenet1.1-7.onnx",
     # "SqueezeNet-v1.0": "vision/classification/squeezenet/model/squeezenet1.0-7.onnx",
     # "Inception-v1": "vision/classification/inception_and_googlenet/inception_v1/model/inception-v1-7.onnx",
-    "Inception-v2": "vision/classification/inception_and_googlenet/inception_v2/model/inception-v2-7.onnx",
+    # "Inception-v2": "vision/classification/inception_and_googlenet/inception_v2/model/inception-v2-7.onnx",
 }
 
 
